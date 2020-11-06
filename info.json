@@ -1,0 +1,10 @@
+{
+  "Id": "RealismFixes",
+  "DisplayName": "Realism Fixes",
+  "Author": "Zeibach",
+  "Version": "0.1.0",
+  "AssemblyName": "RealismFixes.dll",
+  "EntryMethod": "DvMod.RealismFixes.Main.Load",
+  "HomePage": "https://www.nexusmods.com/derailvalley/mods/???",
+  "Repository": "https://raw.githubusercontent.com/mspielberg/dv-realismfixes/master/resources/repository.json"
+}
