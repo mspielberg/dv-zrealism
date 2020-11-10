@@ -29,6 +29,19 @@ namespace DvMod.RealismFixes
         }
     }
 
+    [HarmonyPatch(typeof(LocoControllerDiesel), nameof(LocoControllerDiesel.GetEngineRPMGauge))]
+    public static class DieselRPMGaugeRangePatch
+    {
+        public static bool Prefix(LocoControllerDiesel __instance, ref float __result)
+        {
+            if (!__instance.sim.engineOn)
+                return true;
+            __result = Mathf.Lerp(275f / 10f, 835f / 10f, __instance.sim.engineRPM.value);
+            return false;
+            // Main.DebugLog(() => $"gauge: {TrainCar.Resolve(__instance.gameObject).carType} {__instance.name}: unclamped={__instance.unclamped}, min={__instance.minValue}, max={__instance.maxValue}, minAngle={__instance.minAngle}, maxAngle={__instance.maxAngle}");
+        }
+    }
+
     public static class DieselThrottleNotchFix
     {
         [HarmonyPatch(typeof(LocoKeyboardInputDiesel), nameof(LocoKeyboardInputDiesel.TryApplyThrottleInput))]
