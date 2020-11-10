@@ -1,3 +1,5 @@
+using DV.CabControls;
+using DV.CabControls.Spec;
 using HarmonyLib;
 using UnityEngine;
 
@@ -5,11 +7,26 @@ namespace DvMod.RealismFixes
 {
     internal static class ThrottleNotching
     {
-        private const int NumNotches = 7;
+        public const int NumNotches = 8;
+        public static float GetNotch(float impreciseThrottle) =>
+            Mathf.RoundToInt(impreciseThrottle * NumNotches);
         public static float Notched(float impreciseThrottle) =>
-            Mathf.RoundToInt(impreciseThrottle * NumNotches) / (float)NumNotches;
+            GetNotch(impreciseThrottle) / (float)NumNotches;
         public static float Power(float throttle) =>
             Mathf.Pow(Notched(throttle), Main.settings.throttleGamma);
+        // Notches 0 and 1 are idle, so 7 distinct RPM settings possible
+        public static float TargetRPM(float targetThrottle) =>
+            Mathf.Max(0f, (GetNotch(targetThrottle) - 1) / (NumNotches - 1));
+    }
+
+    [HarmonyPatch(typeof(ControlsInstantiator), nameof(ControlsInstantiator.Spawn))]
+    public static class ThrottleLeverNotchCountPatch
+    {
+        public static void Prefix(ControlSpec spec)
+        {
+            if (spec.name == "C throttle" && spec is Lever leverSpec)
+                leverSpec.notches = ThrottleNotching.NumNotches + 1;
+        }
     }
 
     public static class DieselThrottleNotchFix
