@@ -8,12 +8,24 @@ namespace DvMod.RealismFixes
     {
         private const float ThrottleGamma = 1.4f;
         public const int NumNotches = 8;
+        public const float EngineMaxPower = 1_300_000; // 1.3 kW prime mover
+        public const float TransmissionEfficiency = 0.85f;
         public const float MinPower = 1f / NumNotches;
-        public static float Power(float engineRPM) =>
+        public static float OutputPower(float engineRPM) =>
             Mathf.Pow(((engineRPM * 7f) + 1) / 8f, ThrottleGamma);
         // Notches 0 and 1 are idle, so 7 distinct RPM settings possible
         public static float TargetRPM(float targetThrottle) =>
             Mathf.Max(0f, (ThrottleNotching.GetNotch(targetThrottle) - 1) / (NumNotches - 1));
+
+        public static float RawPowerInWatts(DieselLocoSimulation sim)
+        {
+            var motivePowerFraction =
+                sim.GetComponent<LocoControllerDiesel>().reverser == 0f ? 0f : OutputPower(sim.engineRPM.value);
+            var motivePower = EngineMaxPower * motivePowerFraction;
+            // 100 kW to run accessories
+            var accessoryPower = (0.1f + sim.engineRPM.value) * 100e3f;
+            return motivePower + accessoryPower;
+        }
 
         private enum TransitionState
         {
@@ -35,6 +47,8 @@ namespace DvMod.RealismFixes
             public TransitionState transitionState;
             public float transitionStartTime;
 
+            public int runningFans = 0;
+
             public ExtraState(DieselLocoSimulation sim)
             {
                 this.sim = sim;
@@ -51,14 +65,14 @@ namespace DvMod.RealismFixes
                     case TransitionState.ToLow:
                         if (Time.time > transitionStartTime + TransitionDuration)
                         {
-                            Main.DebugLog(car, () => "Completing transition to low");
+                            // Main.DebugLog(car, () => "Completing transition to low");
                             transitionState = TransitionState.Low;
                         }
                         break;
                     case TransitionState.Low:
                         if (speedKph > TransitionUpSpeed)
                         {
-                            Main.DebugLog(car, () => "Starting transition to high");
+                            // Main.DebugLog(car, () => "Starting transition to high");
                             transitionState = TransitionState.ToHigh;
                             transitionStartTime = Time.time;
                         }
@@ -66,14 +80,14 @@ namespace DvMod.RealismFixes
                     case TransitionState.ToHigh:
                         if (Time.time > transitionStartTime + TransitionDuration)
                         {
-                            Main.DebugLog(car, () => "Completing transition to high");
+                            // Main.DebugLog(car, () => "Completing transition to high");
                             transitionState = TransitionState.High;
                         }
                         break;
                     case TransitionState.High:
                         if (speedKph < TransitionDownSpeed)
                         {
-                            Main.DebugLog(car, () => "Starting transition to low");
+                            // Main.DebugLog(car, () => "Starting transition to low");
                             transitionState = TransitionState.ToLow;
                             transitionStartTime = Time.time;
                         }
@@ -115,8 +129,6 @@ namespace DvMod.RealismFixes
         [HarmonyPatch(typeof(LocoControllerDiesel), nameof(LocoControllerDiesel.GetTractionForce))]
         public static class DieselPowerPatch
         {
-            public const float MaxPower = 1300 * 0.85f * 1000; // 1300 kW prime mover, 85% transmission efficiency
-
             public static bool Prefix(LocoControllerDiesel __instance, ref float __result)
             {
                 var state = ExtraState.Instance(__instance.sim);
@@ -124,7 +136,7 @@ namespace DvMod.RealismFixes
                 var speed = Mathf.Abs(__instance.GetForwardSpeed());
                 var target = (state.InTransition() || __instance.sim.throttle.value == 0f)
                     ? 0f
-                    : MaxPower * Power(__instance.sim.engineRPM.value) / Mathf.Max(1f, speed);
+                    : EngineMaxPower * TransmissionEfficiency * OutputPower(__instance.sim.engineRPM.value) / Mathf.Max(1f, speed);
                 state.tractiveEffort = Mathf.SmoothDamp(
                     state.tractiveEffort,
                     target,
@@ -147,8 +159,67 @@ namespace DvMod.RealismFixes
             }
         }
 
+        [HarmonyPatch(typeof(DieselLocoSimulation), nameof(DieselLocoSimulation.SimulateEngineTemp))]
+        public static class SimulateEngineTempPatch
+        {
+            private const float CoolantCapacity = 977f; // in L; http://www.rr-fallenflags.org/manual/sd18-1.pdf p1
+            private const float WaterHeatCapacity = 3.9f; // in kJ/kg @ ~75 C; https://www.engineeringtoolbox.com/specific-heat-capacity-water-d_660.html
+            private const float CoolingAirflow = 0.005f;
+            private const float AmbientTemperature = 20f;
+
+            // http://www.rr-fallenflags.org/manual/sd18-4.pdf p45
+            private const float RadiatorFan1OnThreshold = 77f;
+            private const float RadiatorFan1OffThreshold = 68f;
+            private const float RadiatorFan2OnThreshold = 82;
+            private const float RadiatorFan2OffThreshold = 74;
+
+            private static void SimulateFanThermostats(float engineTemp, ExtraState state)
+            {
+                switch (state.runningFans)
+                {
+                case 0:
+                    if (engineTemp > RadiatorFan1OnThreshold)
+                        state.runningFans = 1;
+                    break;
+                case 1:
+                    if (engineTemp < RadiatorFan1OffThreshold)
+                        state.runningFans = 0;
+                    else if (engineTemp > RadiatorFan2OnThreshold)
+                        state.runningFans = 2;
+                    break;
+                case 2:
+                    if (engineTemp < RadiatorFan2OffThreshold)
+                        state.runningFans = 1;
+                    break;
+                }
+            }
+
+            public static bool Prefix(DieselLocoSimulation __instance, float delta)
+            {
+                var engineTemp = __instance.engineTemp.value;
+                var state = ExtraState.Instance(__instance);
+                SimulateFanThermostats(engineTemp, state);
+
+                var energyInKJ = RawPowerInWatts(__instance) * delta / __instance.timeMult / 1000;
+                var heating = energyInKJ / WaterHeatCapacity / CoolantCapacity;
+                if (__instance.engineOn)
+                    __instance.engineTemp.AddNextValue(heating);
+
+                var airflowFraction = state.runningFans == 1 ? 0.75f : state.runningFans == 2 ? 1f : 0.01f;
+                var airflow = airflowFraction * CoolingAirflow;
+                var temperatureDelta = __instance.engineTemp.value - AmbientTemperature;
+                var cooling = airflow * temperatureDelta * Main.settings.dieselCoolingMultiplier * delta / __instance.timeMult;
+                __instance.engineTemp.AddNextValue(-cooling);
+
+                // Main.DebugLog(TrainCar.Resolve(__instance.gameObject), () => $"energy={energyInKJ}, heating={heating}, cooling={cooling}, engineTemp={engineTemp}, nextTemp={__instance.engineTemp.nextValue}, runningFans={state.runningFans}");
+
+                return false;
+            }
+        }
+
         private const float DieselEnergyContent = 36e6f; /* J/L */
         private const float ThermalEfficiency = 0.30f;
+        /// <summary>Returns fuel usage in L/s.</summary>
         public static float DieselFuelUsage(float energyJ) => energyJ / DieselEnergyContent / ThermalEfficiency;
 
         [HarmonyPatch(typeof(DieselLocoSimulation), nameof(DieselLocoSimulation.SimulateFuel))]
@@ -158,10 +229,9 @@ namespace DvMod.RealismFixes
             {
                 if (!__instance.engineOn)
                     return false;
-                var motivePower = __instance.GetComponent<LocoControllerDiesel>().reverser == 0f ? 0f : Power(__instance.engineRPM.value);
-                // 100 kW to run accessories
-                var accessoryPower = (0.1f + __instance.engineRPM.value) * 100e3f;
-                var fuelUsage = DieselFuelUsage(motivePower + accessoryPower) * Main.settings.fuelConsumptionMultiplier * delta;
+
+                var fuelUsage = DieselFuelUsage(RawPowerInWatts(__instance)) * Main.settings.fuelConsumptionMultiplier *
+                    delta / __instance.timeMult;
                 __instance.TotalFuelConsumed += fuelUsage;
                 __instance.fuel.AddNextValue(-fuelUsage);
                 return false;
@@ -175,7 +245,7 @@ namespace DvMod.RealismFixes
             {
                 if (__instance.engineRPM.value <= 0.0 || __instance.oil.value <= 0.0)
                     return false;
-                var oilUsage = __instance.engineRPM.value * Main.settings.oilConsumptionMultiplier * delta;
+                var oilUsage = __instance.engineRPM.value * Main.settings.oilConsumptionMultiplier * delta / __instance.timeMult;
                 __instance.oil.AddNextValue(-oilUsage);
 
                 return false;
