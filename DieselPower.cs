@@ -9,7 +9,7 @@ namespace DvMod.RealismFixes
         public const int NumNotches = 8;
         public const float MinPower = 1f / NumNotches;
         public static float Power(float engineRPM) =>
-            Mathf.Pow(Mathf.Max(MinPower, engineRPM), Main.settings.throttleGamma);
+            Mathf.Pow(((engineRPM * 7f) + 1) / 8f, Main.settings.throttleGamma);
         // Notches 0 and 1 are idle, so 7 distinct RPM settings possible
         public static float TargetRPM(float targetThrottle) =>
             Mathf.Max(0f, (ThrottleNotching.GetNotch(targetThrottle) - 1) / (NumNotches - 1));
