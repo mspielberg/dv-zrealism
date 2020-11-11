@@ -9,7 +9,8 @@ namespace DvMod.RealismFixes
 
         [Draw("Throttle gamma")] public float throttleGamma = 1.2f;
         [Draw("Shunter cooling")] public float shunterTemperatureMultiplier = 0.5f;
-        [Draw("Shunter fuel consumption")] public float shunterFuelConsumptionMultiplier = 0.1f;
+        [Draw("Fuel consumption multiplier")] public float fuelConsumptionMultiplier = 4f;
+        [Draw("Oil consumption multiplier")] public float oilConsumptionMultiplier = 0.1f;
         [Draw("Shunter throttle response")] public float shunterThrottleResponse = 1f;
 
         [Draw("Enable logging")] public bool enableLogging = false;

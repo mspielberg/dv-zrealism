@@ -68,14 +68,22 @@ namespace DvMod.RealismFixes
     [HarmonyPatch(typeof(ShunterLocoSimulation), nameof(ShunterLocoSimulation.SimulateFuel))]
     public static class ShunterFuelPatch
     {
+        private const float DieselEnergyContent = 36e6f; /* J/L */
+        private const float ThermalEfficiency = 0.30f;
+        public static float DieselFuelUsage(float energyJ) => energyJ / DieselEnergyContent / ThermalEfficiency;
+
         public static bool Prefix(ShunterLocoSimulation __instance, float delta)
         {
-            if (!__instance.engineOn || __instance.fuel.value <= 0.0)
+            if (!__instance.engineOn)
                 return false;
-            float num = Mathf.Lerp(0.025f, 1f, __instance.engineRPM.value) * 15f *
-                Main.settings.shunterFuelConsumptionMultiplier * delta;
-            __instance.TotalFuelConsumed += num;
-            __instance.fuel.AddNextValue(-num);
+            var motivePower = __instance.GetComponent<LocoControllerShunter>().reverser == 0f
+                ? 0f
+                : ShunterPower.Power(__instance.engineRPM.value);
+            // 30 kW to run accessories
+            var accessoryPower = (0.1f + __instance.engineRPM.value) * 30e3f;
+            var fuelUsage = DieselFuelUsage(motivePower + accessoryPower) * Main.settings.fuelConsumptionMultiplier * delta;
+            __instance.TotalFuelConsumed += fuelUsage;
+            __instance.fuel.AddNextValue(-fuelUsage);
             return false;
         }
     }
@@ -87,8 +95,8 @@ namespace DvMod.RealismFixes
         {
             if (__instance.engineRPM.value <= 0.0 || __instance.oil.value <= 0.0)
                 return false;
-            __instance.oil.AddNextValue(-__instance.engineRPM.value * 0.3f *
-                Main.settings.shunterFuelConsumptionMultiplier * delta);
+            var oilUsage = __instance.engineRPM.value * Main.settings.oilConsumptionMultiplier * delta;
+            __instance.oil.AddNextValue(-oilUsage);
 
             return false;
         }

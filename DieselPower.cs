@@ -70,5 +70,40 @@ namespace DvMod.RealismFixes
                 __instance.rpm.transform.parent.Find("I voltage_meter").GetComponent<Indicator>().value = amps;
             }
         }
+
+        private const float DieselEnergyContent = 36e6f; /* J/L */
+        private const float ThermalEfficiency = 0.30f;
+        public static float DieselFuelUsage(float energyJ) => energyJ / DieselEnergyContent / ThermalEfficiency;
+
+        [HarmonyPatch(typeof(DieselLocoSimulation), nameof(DieselLocoSimulation.SimulateFuel))]
+        public static class SimulateFuelPatch
+        {
+            public static bool Prefix(DieselLocoSimulation __instance, float delta)
+            {
+                if (!__instance.engineOn)
+                    return false;
+                var motivePower = __instance.GetComponent<LocoControllerDiesel>().reverser == 0f ? 0f : Power(__instance.engineRPM.value);
+                // 100 kW to run accessories
+                var accessoryPower = (0.1f + __instance.engineRPM.value) * 100e3f;
+                var fuelUsage = DieselFuelUsage(motivePower + accessoryPower) * Main.settings.fuelConsumptionMultiplier * delta;
+                __instance.TotalFuelConsumed += fuelUsage;
+                __instance.fuel.AddNextValue(-fuelUsage);
+                return false;
+            }
+        }
+
+        [HarmonyPatch(typeof(DieselLocoSimulation), nameof(DieselLocoSimulation.SimulateOil))]
+        public static class DieselOilPatch
+        {
+            public static bool Prefix(DieselLocoSimulation __instance, float delta)
+            {
+                if (__instance.engineRPM.value <= 0.0 || __instance.oil.value <= 0.0)
+                    return false;
+                var oilUsage = __instance.engineRPM.value * Main.settings.oilConsumptionMultiplier * delta;
+                __instance.oil.AddNextValue(-oilUsage);
+
+                return false;
+            }
+        }
     }
 }
