@@ -5,7 +5,8 @@ namespace DvMod.RealismFixes
 {
     public static class ShunterPower
     {
-        public static float Power(float engineRPM) => Mathf.Pow(engineRPM, Main.settings.throttleGamma);
+        private const float ThrottleGamma = 1.4f;
+        public static float Power(float engineRPM) => Mathf.Pow(engineRPM, ThrottleGamma);
         public static float TargetRPM(float targetThrottle) => targetThrottle;
 
         [HarmonyPatch(typeof(ShunterLocoSimulation), nameof(ShunterLocoSimulation.SimulateEngineRPM))]
@@ -18,7 +19,7 @@ namespace DvMod.RealismFixes
                     current: __instance.engineRPM.value,
                     target: TargetRPM(__instance.throttle.value),
                     currentVelocity: ref throttleVelo,
-                    smoothTime: 1f / Main.settings.shunterThrottleResponse,
+                    smoothTime: 1f,
                     maxSpeed: 1f);
                 __instance.throttleToTargetDiff.SetNextValue(throttleVelo);
                 __instance.engineRPM.SetNextValue(nextRPM);

@@ -6,10 +6,11 @@ namespace DvMod.RealismFixes
 {
     public static class DieselPower
     {
+        private const float ThrottleGamma = 1.4f;
         public const int NumNotches = 8;
         public const float MinPower = 1f / NumNotches;
         public static float Power(float engineRPM) =>
-            Mathf.Pow(((engineRPM * 7f) + 1) / 8f, Main.settings.throttleGamma);
+            Mathf.Pow(((engineRPM * 7f) + 1) / 8f, ThrottleGamma);
         // Notches 0 and 1 are idle, so 7 distinct RPM settings possible
         public static float TargetRPM(float targetThrottle) =>
             Mathf.Max(0f, (ThrottleNotching.GetNotch(targetThrottle) - 1) / (NumNotches - 1));
@@ -102,7 +103,7 @@ namespace DvMod.RealismFixes
                     current: __instance.engineRPM.value,
                     target: TargetRPM(__instance.throttle.value),
                     currentVelocity: ref throttleVelo,
-                    smoothTime: 1f / Main.settings.shunterThrottleResponse,
+                    smoothTime: 1f,
                     maxSpeed: 1f);
                 __instance.throttleToTargetDiff.SetNextValue(throttleVelo);
                 __instance.engineRPM.SetNextValue(nextRPM);
