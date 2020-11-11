@@ -44,7 +44,7 @@ namespace DvMod.RealismFixes
 
             public void CheckTransition()
             {
-                var speedKph = sim.speed.value * 3.6f;
+                var speedKph = sim.speed.value;
                 var car = TrainCar.Resolve(sim.gameObject);
                 switch (transitionState)
                 {
