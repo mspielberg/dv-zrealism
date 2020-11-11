@@ -181,5 +181,46 @@ namespace DvMod.RealismFixes
                 return false;
             }
         }
+
+        public static class DieselSanding
+        {
+            public const float SandCapacity = 2000f; // in kg; http://www.rr-fallenflags.org/manual/sd18-1.pdf p1
+            public const float SandingRate = 1f / 30f; // in kg/s; https://www.knorr-bremse.com/remote/media/documents/railvehicles/en/en_neu_2010/Sanding_systems.pdf
+
+            [HarmonyPatch(typeof(DieselLocoSimulation), nameof(DieselLocoSimulation.InitComponents))]
+            public static class InitComponentsPatch
+            {
+                public static void Postfix(DieselLocoSimulation __instance)
+                {
+                    __instance.sand.max = __instance.sand.value = SandCapacity;
+                }
+            }
+
+            [HarmonyPatch(typeof(DieselLocoSimulation), nameof(DieselLocoSimulation.SimulateSand))]
+            public static class SimulateSandPatch
+            {
+                public static bool Prefix(DieselLocoSimulation __instance, float delta)
+                {
+                    var sand = __instance.sand;
+                    var sandFlow = __instance.sandFlow;
+                    if (__instance.sandOn && sand.value > 0.0 && sandFlow.value < sandFlow.max ||
+                    (!__instance.sandOn || sand.value == 0.0) && sandFlow.value > sandFlow.min)
+                        sandFlow.AddNextValue((!__instance.sandOn || sand.value <= 0.0 ? -1f : 1f) * 10f * delta);
+                    if (sandFlow.value <= 0.0 || sand.value <= 0.0)
+                        return false;
+                    sand.AddNextValue(-sandFlow.value * SandingRate * delta / __instance.timeMult);
+                    return false;
+                }
+            }
+
+            [HarmonyPatch(typeof(IndicatorsDiesel), nameof(IndicatorsDiesel.Start))]
+            public static class StartPatch
+            {
+                public static void Postfix(IndicatorsDiesel __instance)
+                {
+                    __instance.sand.maxValue = SandCapacity;
+                }
+            }
+        }
     }
 }
