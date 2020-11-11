@@ -14,6 +14,83 @@ namespace DvMod.RealismFixes
         public static float TargetRPM(float targetThrottle) =>
             Mathf.Max(0f, (ThrottleNotching.GetNotch(targetThrottle) - 1) / (NumNotches - 1));
 
+        private enum TransitionState
+        {
+            ToLow,
+            Low,
+            ToHigh,
+            High,
+        }
+
+        private const float TransitionUpSpeed = 40f;
+        private const float TransitionDownSpeed = 30f;
+        private const float TransitionDuration = 2f;
+
+        private class ExtraState
+        {
+            private readonly DieselLocoSimulation sim;
+            public float tractiveEffort;
+            public float tractiveEffortVelo;
+            public TransitionState transitionState;
+            public float transitionStartTime;
+
+            public ExtraState(DieselLocoSimulation sim)
+            {
+                this.sim = sim;
+            }
+
+            public bool InTransition() => transitionState == TransitionState.ToHigh || transitionState == TransitionState.ToLow;
+
+            public void CheckTransition()
+            {
+                var speedKph = sim.speed.value * 3.6f;
+                var car = TrainCar.Resolve(sim.gameObject);
+                switch (transitionState)
+                {
+                    case TransitionState.ToLow:
+                        if (Time.time > transitionStartTime + TransitionDuration)
+                        {
+                            Main.DebugLog(car, () => "Completing transition to low");
+                            transitionState = TransitionState.Low;
+                        }
+                        break;
+                    case TransitionState.Low:
+                        if (speedKph > TransitionUpSpeed)
+                        {
+                            Main.DebugLog(car, () => "Starting transition to high");
+                            transitionState = TransitionState.ToHigh;
+                            transitionStartTime = Time.time;
+                        }
+                        break;
+                    case TransitionState.ToHigh:
+                        if (Time.time > transitionStartTime + TransitionDuration)
+                        {
+                            Main.DebugLog(car, () => "Completing transition to high");
+                            transitionState = TransitionState.High;
+                        }
+                        break;
+                    case TransitionState.High:
+                        if (speedKph < TransitionDownSpeed)
+                        {
+                            Main.DebugLog(car, () => "Starting transition to low");
+                            transitionState = TransitionState.ToLow;
+                            transitionStartTime = Time.time;
+                        }
+                        break;
+                }
+            }
+
+            private static readonly Dictionary<DieselLocoSimulation, ExtraState> states =
+                new Dictionary<DieselLocoSimulation, ExtraState>();
+
+            public static ExtraState Instance(DieselLocoSimulation sim)
+            {
+                if (!states.TryGetValue(sim, out var state))
+                    states[sim] = state = new ExtraState(sim);
+                return state;
+            }
+        }
+
         [HarmonyPatch(typeof(DieselLocoSimulation), nameof(DieselLocoSimulation.SimulateEngineRPM))]
         public static class SimulateEngineRPMPatch
         {
@@ -39,22 +116,20 @@ namespace DvMod.RealismFixes
         {
             public const float MaxPower = 1300 * 0.85f * 1000; // 1300 kW prime mover, 85% transmission efficiency
 
-            private static readonly Dictionary<LocoControllerDiesel, (float, float)> tractionVelo =
-                new Dictionary<LocoControllerDiesel, (float, float)>();
-
             public static bool Prefix(LocoControllerDiesel __instance, ref float __result)
             {
-                var (effort, velo) = tractionVelo.GetValueOrDefault(__instance);
-                var target = __instance.sim.throttle.value == 0f
+                var state = ExtraState.Instance(__instance.sim);
+                state.CheckTransition();
+                var speed = Mathf.Abs(__instance.GetForwardSpeed());
+                var target = (state.InTransition() || __instance.sim.throttle.value == 0f)
                     ? 0f
-                    : MaxPower * Power(__instance.sim.engineRPM.value) / Mathf.Max(1f, Mathf.Abs(__instance.GetForwardSpeed()));
-                effort = Mathf.SmoothDamp(
-                    effort,
+                    : MaxPower * Power(__instance.sim.engineRPM.value) / Mathf.Max(1f, speed);
+                state.tractiveEffort = Mathf.SmoothDamp(
+                    state.tractiveEffort,
                     target,
-                    ref velo,
+                    ref state.tractiveEffortVelo,
                     0.5f);
-                tractionVelo[__instance] = (effort, velo);
-                __result = effort;
+                __result = state.tractiveEffort;
                 return false;
             }
         }
