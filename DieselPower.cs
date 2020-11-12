@@ -19,9 +19,8 @@ namespace DvMod.RealismFixes
 
         public static float RawPowerInWatts(DieselLocoSimulation sim)
         {
-            var motivePowerFraction =
-                sim.GetComponent<LocoControllerDiesel>().reverser == 0f ? 0f : OutputPower(sim.engineRPM.value);
-            var motivePower = EngineMaxPower * motivePowerFraction;
+            var atIdle = sim.GetComponent<LocoControllerDiesel>().reverser == 0f || sim.throttle.value == 0;
+            var motivePower = atIdle ? 0f : EngineMaxPower * OutputPower(sim.engineRPM.value);
             // 100 kW to run accessories
             var accessoryPower = (0.1f + sim.engineRPM.value) * 100e3f;
             return motivePower + accessoryPower;
