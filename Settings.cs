@@ -11,7 +11,7 @@ namespace DvMod.RealismFixes
         [Draw("Shunter cooling")] public float shunterTemperatureMultiplier = 0.5f;
 
         [Draw("Fuel consumption multiplier")] public float fuelConsumptionMultiplier = 4f;
-        [Draw("Oil consumption multiplier")] public float oilConsumptionMultiplier = 0.1f;
+        [Draw("Oil consumption multiplier")] public float oilConsumptionMultiplier = 4f;
 
         [Draw("Enable logging")] public bool enableLogging = false;
         public readonly string? version = Main.mod?.Info.Version;

@@ -249,12 +249,16 @@ namespace DvMod.RealismFixes
         [HarmonyPatch(typeof(DieselLocoSimulation), nameof(DieselLocoSimulation.SimulateOil))]
         public static class DieselOilPatch
         {
+            public const float OilConsumption = 1e-9f;
             public static bool Prefix(DieselLocoSimulation __instance, float delta)
             {
+                if (__instance.oil.value <= 0)
+                    __instance.oil.value = __instance.oil.nextValue = __instance.oil.max * (__instance.fuel.value / __instance.fuel.max);
                 if (__instance.engineRPM.value <= 0.0 || __instance.oil.value <= 0.0)
                     return false;
-                var oilUsage = __instance.engineRPM.value * Main.settings.oilConsumptionMultiplier * delta / __instance.timeMult;
+                var oilUsage = RawPowerInWatts(__instance) * OilConsumption * Main.settings.oilConsumptionMultiplier * delta / __instance.timeMult;
                 __instance.oil.AddNextValue(-oilUsage);
+                // Main.DebugLog(TrainCar.Resolve(__instance.gameObject), () => $"oil={__instance.oil.value} / {__instance.oil.max}, oilConsumption={oilUsage / (delta / __instance.timeMult) * 3600} Lph, timeToExhaust={__instance.oil.value/(oilUsage/(delta/__instance.timeMult))} s");
 
                 return false;
             }
