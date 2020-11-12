@@ -129,14 +129,15 @@ namespace DvMod.RealismFixes
                 var state = ExtraState.Instance(__instance);
                 state.CheckTransition();
                 var speedMetersPerSecond = __instance.speed.value / 3.6f;
-                var target = (state.InTransition() || __instance.throttle.value == 0f)
-                    ? 0f
-                    : EngineMaxPower * TransmissionEfficiency * OutputPower(__instance.engineRPM.value) / Mathf.Max(1f, speedMetersPerSecond);
+                var powerOutput = (state.InTransition() || __instance.throttle.value == 0f) ? 0f :
+                    EngineMaxPower * TransmissionEfficiency * OutputPower(__instance.engineRPM.value);
+                var target = powerOutput / Mathf.Max(1f, speedMetersPerSecond);
                 state.tractiveEffort = Mathf.SmoothDamp(
                     state.tractiveEffort,
                     target,
                     ref state.tractiveEffortVelo,
                     0.5f);
+
                 // Main.DebugLog(loco, () => $"engineRPM={__instance.engineRPM.value}, speed={speedMetersPerSecond}, target={target}, TE={state.tractiveEffort}");
 
                 return false;

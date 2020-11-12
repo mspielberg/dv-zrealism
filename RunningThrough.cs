@@ -11,14 +11,14 @@ namespace DvMod.RealismFixes
             if (car.IsLoco)
             {
                 var damageController = car.GetComponent<DamageController>();
-                Main.DebugLog(() => $"Applying {Main.settings.runningThroughDamagePercent} damage to loco wheels");
+                // Main.DebugLog(() => $"Applying {Main.settings.runningThroughDamagePercent} damage to loco wheels");
                 damageController.ApplyDamage(damageController.wheels, damageController.wheels.fullHitPoints * Main.settings.runningThroughDamagePercent / 100);
             }
             else
             {
-                Main.DebugLog(() => $"Applying {Main.settings.runningThroughDamagePercent} damage to car, healthBefore={car.CarDamage.currentHealth}");
+                // Main.DebugLog(() => $"Applying {Main.settings.runningThroughDamagePercent} damage to car, healthBefore={car.CarDamage.currentHealth}");
                 car.CarDamage.DamageCar(car.CarDamage.maxHealth * Main.settings.runningThroughDamagePercent / 100);
-                Main.DebugLog(() => $"healthAfter={car.CarDamage.currentHealth}");
+                // Main.DebugLog(() => $"healthAfter={car.CarDamage.currentHealth}");
             }
         }
 
@@ -28,7 +28,7 @@ namespace DvMod.RealismFixes
             if (junction == null)
                 return false;
             var branchIndex = junction.outBranches.FindIndex(b => b.track == track);
-            Main.DebugLog(() => $"branchIndex={branchIndex}, selectedBranch={junction.selectedBranch}");
+            // Main.DebugLog(() => $"branchIndex={branchIndex}, selectedBranch={junction.selectedBranch}");
             if (branchIndex < 0 || branchIndex == junction.selectedBranch)
                 return false;
 
