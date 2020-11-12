@@ -5,7 +5,7 @@ namespace DvMod.RealismFixes
     public class Settings : UnityModManager.ModSettings, IDrawable
     {
         [Draw("Force switches when running through junction")] public bool forceSwitchOnRunningThrough = false;
-        [Draw("Damage when running through junction")] public float runningThroughDamage = 1f;
+        [Draw("Damage % when running through junction")] public float runningThroughDamagePercent = 0.1f;
 
         [Draw("Diesel cooling")] public float dieselCoolingMultiplier = 1.0f;
         [Draw("Shunter cooling")] public float shunterTemperatureMultiplier = 0.5f;

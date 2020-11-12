@@ -11,13 +11,13 @@ namespace DvMod.RealismFixes
             if (car.IsLoco)
             {
                 var damageController = car.GetComponent<DamageController>();
-                Main.DebugLog(() => $"Applying {Main.settings.runningThroughDamage} damage to loco wheels");
-                damageController.ApplyDamage(damageController.wheels, Main.settings.runningThroughDamage);
+                Main.DebugLog(() => $"Applying {Main.settings.runningThroughDamagePercent} damage to loco wheels");
+                damageController.ApplyDamage(damageController.wheels, damageController.wheels.fullHitPoints * Main.settings.runningThroughDamagePercent / 100);
             }
             else
             {
-                Main.DebugLog(() => $"Applying {Main.settings.runningThroughDamage} damage to car, healthBefore={car.CarDamage.currentHealth}");
-                car.CarDamage.DamageCar(Main.settings.runningThroughDamage);
+                Main.DebugLog(() => $"Applying {Main.settings.runningThroughDamagePercent} damage to car, healthBefore={car.CarDamage.currentHealth}");
+                car.CarDamage.DamageCar(car.CarDamage.maxHealth * Main.settings.runningThroughDamagePercent / 100);
                 Main.DebugLog(() => $"healthAfter={car.CarDamage.currentHealth}");
             }
         }
@@ -32,7 +32,7 @@ namespace DvMod.RealismFixes
             if (branchIndex < 0 || branchIndex == junction.selectedBranch)
                 return false;
 
-            if (Main.settings.runningThroughDamage > 0)
+            if (Main.settings.runningThroughDamagePercent > 0)
                 DamageCar(__instance.Car);
             if (Main.settings.forceSwitchOnRunningThrough)
                 junction.Switch(Junction.SwitchMode.FORCED);
