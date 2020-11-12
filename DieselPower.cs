@@ -1,3 +1,4 @@
+using DV;
 using HarmonyLib;
 using System.Collections.Generic;
 using UnityEngine;
@@ -111,6 +112,9 @@ namespace DvMod.RealismFixes
             public static bool Prefix(DieselLocoSimulation __instance)
             {
                 // var loco = TrainCar.Resolve(__instance.gameObject);
+                if (PausePhysicsHandler.PhysicsHandlingInProcess)
+                    return false;
+
                 var throttleVelo = __instance.throttleToTargetDiff.value;
                 var nextRPM = Mathf.SmoothDamp(
                     current: __instance.engineRPM.value,
