@@ -124,7 +124,21 @@ namespace DvMod.RealismFixes
                     maxSpeed: 1f);
                 __instance.throttleToTargetDiff.SetNextValue(throttleVelo);
                 __instance.engineRPM.SetNextValue(nextRPM);
-                //     Main.DebugLog(loco, $"{loco.ID}: throttle={__instance.throttle.value}, RPM={__instance.engineRPM.value}, velo={throttleVelo}");
+                // Main.DebugLog(loco, $"{loco.ID}: throttle={__instance.throttle.value}, RPM={__instance.engineRPM.value}, velo={throttleVelo}");
+
+                var state = ExtraState.Instance(__instance);
+                state.CheckTransition();
+                var speedMetersPerSecond = __instance.speed.value / 3.6f;
+                var target = (state.InTransition() || __instance.throttle.value == 0f)
+                    ? 0f
+                    : EngineMaxPower * TransmissionEfficiency * OutputPower(__instance.engineRPM.value) / Mathf.Max(1f, speedMetersPerSecond);
+                state.tractiveEffort = Mathf.SmoothDamp(
+                    state.tractiveEffort,
+                    target,
+                    ref state.tractiveEffortVelo,
+                    0.5f);
+                // Main.DebugLog(loco, () => $"engineRPM={__instance.engineRPM.value}, speed={speedMetersPerSecond}, target={target}, TE={state.tractiveEffort}");
+
                 return false;
             }
         }
@@ -135,16 +149,6 @@ namespace DvMod.RealismFixes
             public static bool Prefix(LocoControllerDiesel __instance, ref float __result)
             {
                 var state = ExtraState.Instance(__instance.sim);
-                state.CheckTransition();
-                var speed = Mathf.Abs(__instance.GetForwardSpeed());
-                var target = (state.InTransition() || __instance.sim.throttle.value == 0f)
-                    ? 0f
-                    : EngineMaxPower * TransmissionEfficiency * OutputPower(__instance.sim.engineRPM.value) / Mathf.Max(1f, speed);
-                state.tractiveEffort = Mathf.SmoothDamp(
-                    state.tractiveEffort,
-                    target,
-                    ref state.tractiveEffortVelo,
-                    0.5f);
                 __result = state.tractiveEffort;
                 return false;
             }
@@ -237,6 +241,7 @@ namespace DvMod.RealismFixes
                     delta / __instance.timeMult;
                 __instance.TotalFuelConsumed += fuelUsage;
                 __instance.fuel.AddNextValue(-fuelUsage);
+                // Main.DebugLog(TrainCar.Resolve(__instance.gameObject), () => $"fuel={__instance.fuel.value} / {__instance.fuel.max}, fuelConsumption={fuelUsage / (delta / __instance.timeMult) * 3600} Lph, timeToExhaust={__instance.fuel.value/(fuelUsage/(delta/__instance.timeMult))} s");
                 return false;
             }
         }
