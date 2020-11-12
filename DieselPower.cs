@@ -69,7 +69,7 @@ namespace DvMod.RealismFixes
                         }
                         break;
                     case TransitionState.Low:
-                        if (speedKph > TransitionUpSpeed)
+                        if (speedKph > TransitionUpSpeed && Random.value < 0.01f)
                         {
                             // Main.DebugLog(car, () => "Starting transition to high");
                             transitionState = TransitionState.ToHigh;
@@ -84,7 +84,7 @@ namespace DvMod.RealismFixes
                         }
                         break;
                     case TransitionState.High:
-                        if (speedKph < TransitionDownSpeed)
+                        if (speedKph < TransitionDownSpeed && Random.value < 0.01f)
                         {
                             // Main.DebugLog(car, () => "Starting transition to low");
                             transitionState = TransitionState.ToLow;
