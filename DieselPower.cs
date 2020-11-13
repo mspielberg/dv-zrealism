@@ -9,7 +9,7 @@ namespace DvMod.RealismFixes
     {
         private const float ThrottleGamma = 1.4f;
         public const int NumNotches = 8;
-        public const float EngineMaxPower = 1_300_000; // 1.3 kW prime mover
+        public const float EngineMaxPower = 1_300_000; // 1.3 MW prime mover
         public const float TransmissionEfficiency = 0.85f;
         public const float MinPower = 1f / NumNotches;
         public static float OutputPower(float engineRPM) =>
@@ -253,8 +253,6 @@ namespace DvMod.RealismFixes
             public const float OilConsumption = 1e-9f;
             public static bool Prefix(DieselLocoSimulation __instance, float delta)
             {
-                if (__instance.oil.value <= 0)
-                    __instance.oil.value = __instance.oil.nextValue = __instance.oil.max * (__instance.fuel.value / __instance.fuel.max);
                 if (__instance.engineRPM.value <= 0.0 || __instance.oil.value <= 0.0)
                     return false;
                 var oilUsage = RawPowerInWatts(__instance) * OilConsumption * Main.settings.oilConsumptionMultiplier * delta / __instance.timeMult;
@@ -286,9 +284,12 @@ namespace DvMod.RealismFixes
                 {
                     var sand = __instance.sand;
                     var sandFlow = __instance.sandFlow;
-                    if (__instance.sandOn && sand.value > 0.0 && sandFlow.value < sandFlow.max ||
-                    (!__instance.sandOn || sand.value == 0.0) && sandFlow.value > sandFlow.min)
+                    if ((__instance.sandOn && sand.value > 0.0 && sandFlow.value < sandFlow.max) ||
+                    ((!__instance.sandOn || sand.value == 0.0) && sandFlow.value > sandFlow.min))
+                    {
                         sandFlow.AddNextValue((!__instance.sandOn || sand.value <= 0.0 ? -1f : 1f) * 10f * delta);
+                    }
+
                     if (sandFlow.value <= 0.0 || sand.value <= 0.0)
                         return false;
                     sand.AddNextValue(-sandFlow.value * SandingRate * delta / __instance.timeMult);

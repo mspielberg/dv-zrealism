@@ -6,8 +6,22 @@ namespace DvMod.RealismFixes
     public static class ShunterPower
     {
         private const float ThrottleGamma = 1.4f;
-        public static float Power(float engineRPM) => Mathf.Pow(engineRPM, ThrottleGamma);
+        public const float EngineMaxPower = 392_000; // 392 kW prime mover
+        public const float TransmissionEfficiency = 0.85f;
+        public static float CrankshaftPower(ShunterLocoSimulation sim)
+        {
+            var atIdle = sim.GetComponent<LocoControllerShunter>().reverser == 0f || sim.throttle.value == 0;
+            var power = atIdle ? 0f : EngineMaxPower * Mathf.Pow(sim.engineRPM.value, ThrottleGamma);
+            return power;
+        }
         public static float TargetRPM(float targetThrottle) => targetThrottle;
+
+        public static float RawPowerInWatts(ShunterLocoSimulation sim)
+        {
+            // 30 kW to run accessories
+            var accessoryPower = (0.1f + sim.engineRPM.value) * 30e3f;
+            return CrankshaftPower(sim) + accessoryPower;
+        }
 
         [HarmonyPatch(typeof(ShunterLocoSimulation), nameof(ShunterLocoSimulation.SimulateEngineRPM))]
         public static class SimulateEngineRPMPatch
@@ -30,10 +44,9 @@ namespace DvMod.RealismFixes
         [HarmonyPatch(typeof(LocoControllerShunter), nameof(LocoControllerShunter.GetTractionForce))]
         public static class GetTractionForcePatch
         {
-            public const float MaxPower = 392 * 0.85f * 1000; // 392 kW prime mover, 85% transmission efficiency
             public static bool Prefix(LocoControllerShunter __instance, ref float __result)
             {
-                __result = MaxPower * Power(__instance.sim.engineRPM.value) / Mathf.Max(1f, Mathf.Abs(__instance.GetForwardSpeed()));
+                __result = TransmissionEfficiency * CrankshaftPower(__instance.sim) / Mathf.Max(1f, Mathf.Abs(__instance.GetForwardSpeed()));
                 return false;
             }
         }
@@ -77,14 +90,10 @@ namespace DvMod.RealismFixes
         {
             if (!__instance.engineOn)
                 return false;
-            var motivePower = __instance.GetComponent<LocoControllerShunter>().reverser == 0f
-                ? 0f
-                : ShunterPower.Power(__instance.engineRPM.value);
-            // 30 kW to run accessories
-            var accessoryPower = (0.1f + __instance.engineRPM.value) * 30e3f;
-            var fuelUsage = DieselFuelUsage(motivePower + accessoryPower) * Main.settings.fuelConsumptionMultiplier * delta;
+            var fuelUsage = DieselFuelUsage(ShunterPower.RawPowerInWatts(__instance)) * Main.settings.fuelConsumptionMultiplier * delta;
             __instance.TotalFuelConsumed += fuelUsage;
             __instance.fuel.AddNextValue(-fuelUsage);
+            Main.DebugLog(TrainCar.Resolve(__instance.gameObject), () => $"fuel={__instance.fuel.value} / {__instance.fuel.max}, fuelConsumption={fuelUsage / (delta / __instance.timeMult) * 3600} Lph, timeToExhaust={__instance.fuel.value/(fuelUsage/(delta/__instance.timeMult))} s");
             return false;
         }
     }
@@ -92,12 +101,14 @@ namespace DvMod.RealismFixes
     [HarmonyPatch(typeof(ShunterLocoSimulation), nameof(ShunterLocoSimulation.SimulateOil))]
     public static class ShunterOilPatch
     {
+        public const float OilConsumption = 1e-10f;
         public static bool Prefix(ShunterLocoSimulation __instance, float delta)
         {
             if (__instance.engineRPM.value <= 0.0 || __instance.oil.value <= 0.0)
                 return false;
-            var oilUsage = __instance.engineRPM.value * Main.settings.oilConsumptionMultiplier * delta;
+            var oilUsage = ShunterPower.RawPowerInWatts(__instance) * OilConsumption * Main.settings.oilConsumptionMultiplier * delta / __instance.timeMult;
             __instance.oil.AddNextValue(-oilUsage);
+            Main.DebugLog(TrainCar.Resolve(__instance.gameObject), () => $"oil={__instance.oil.value} / {__instance.oil.max}, oilConsumption={oilUsage / (delta / __instance.timeMult) * 3600} Lph, timeToExhaust={__instance.oil.value/(oilUsage/(delta/__instance.timeMult))} s");
 
             return false;
         }
