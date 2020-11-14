@@ -1,6 +1,6 @@
 using UnityModManagerNet;
 
-namespace DvMod.RealismFixes
+namespace DvMod.ZRealism
 {
     public class Settings : UnityModManager.ModSettings, IDrawable
     {

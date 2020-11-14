@@ -3,7 +3,7 @@
     <TargetFramework>net472</TargetFramework>
     <LangVersion>8.0</LangVersion>
     <Nullable>enable</Nullable>
-    <RootNamespace>DvMod.RealismFixes</RootNamespace>
+    <RootNamespace>DvMod.ZRealism</RootNamespace>
     <InformationalVersion>0.1.0</InformationalVersion>
   </PropertyGroup>
 

@@ -1,7 +1,7 @@
 using HarmonyLib;
 using UnityEngine;
 
-namespace DvMod.RealismFixes
+namespace DvMod.ZRealism
 {
     public static class ShunterPower
     {

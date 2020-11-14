@@ -1,6 +1,6 @@
 using HarmonyLib;
 
-namespace DvMod.RealismFixes
+namespace DvMod.ZRealism
 {
     [HarmonyPatch(typeof(Bogie), nameof(Bogie.SwitchJunctionIfNeeded))]
     static public class SwitchJunctionIfNeededPatch

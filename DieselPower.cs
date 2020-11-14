@@ -3,7 +3,7 @@ using HarmonyLib;
 using System.Collections.Generic;
 using UnityEngine;
 
-namespace DvMod.RealismFixes
+namespace DvMod.ZRealism
 {
     public static class DieselPower
     {

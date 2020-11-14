@@ -2,7 +2,7 @@ using HarmonyLib;
 using System;
 using UnityModManagerNet;
 
-namespace DvMod.RealismFixes
+namespace DvMod.ZRealism
 {
     [EnableReloading]
     public static class Main

@@ -1,10 +1,10 @@
 {
-  "Id": "RealismFixes",
-  "DisplayName": "Realism Fixes",
+  "Id": "ZRealism",
+  "DisplayName": "Zeibach's Realism Overhaul",
   "Author": "Zeibach",
   "Version": "0.1.0",
-  "AssemblyName": "RealismFixes.dll",
-  "EntryMethod": "DvMod.RealismFixes.Main.Load",
+  "AssemblyName": "ZRealism.dll",
+  "EntryMethod": "DvMod.ZRealism.Main.Load",
   "HomePage": "https://www.nexusmods.com/derailvalley/mods/???",
-  "Repository": "https://raw.githubusercontent.com/mspielberg/dv-realismfixes/master/resources/repository.json"
+  "Repository": "https://raw.githubusercontent.com/mspielberg/dv-zrealism/master/resources/repository.json"
 }

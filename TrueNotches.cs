@@ -3,7 +3,7 @@ using DV.CabControls.Spec;
 using HarmonyLib;
 using UnityEngine;
 
-namespace DvMod.RealismFixes
+namespace DvMod.ZRealism
 {
     internal static class ThrottleNotching
     {
