@@ -90,7 +90,8 @@ namespace DvMod.ZRealism
         {
             if (!__instance.engineOn)
                 return false;
-            var fuelUsage = DieselFuelUsage(ShunterPower.RawPowerInWatts(__instance)) * Main.settings.fuelConsumptionMultiplier * delta;
+            var fuelUsage = DieselFuelUsage(ShunterPower.RawPowerInWatts(__instance)) * Main.settings.fuelConsumptionMultiplier *
+                (delta / __instance.timeMult);
             __instance.TotalFuelConsumed += fuelUsage;
             __instance.fuel.AddNextValue(-fuelUsage);
             Main.DebugLog(TrainCar.Resolve(__instance.gameObject), () => $"fuel={__instance.fuel.value} / {__instance.fuel.max}, fuelConsumption={fuelUsage / (delta / __instance.timeMult) * 3600} Lph, timeToExhaust={__instance.fuel.value/(fuelUsage/(delta/__instance.timeMult))} s");
@@ -108,7 +109,7 @@ namespace DvMod.ZRealism
                 return false;
             var oilUsage = ShunterPower.RawPowerInWatts(__instance) * OilConsumption * Main.settings.oilConsumptionMultiplier * delta / __instance.timeMult;
             __instance.oil.AddNextValue(-oilUsage);
-            Main.DebugLog(TrainCar.Resolve(__instance.gameObject), () => $"oil={__instance.oil.value} / {__instance.oil.max}, oilConsumption={oilUsage / (delta / __instance.timeMult) * 3600} Lph, timeToExhaust={__instance.oil.value/(oilUsage/(delta/__instance.timeMult))} s");
+            // Main.DebugLog(TrainCar.Resolve(__instance.gameObject), () => $"oil={__instance.oil.value} / {__instance.oil.max}, oilConsumption={oilUsage / (delta / __instance.timeMult) * 3600} Lph, timeToExhaust={__instance.oil.value/(oilUsage/(delta/__instance.timeMult))} s");
 
             return false;
         }
