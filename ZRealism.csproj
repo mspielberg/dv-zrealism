@@ -20,6 +20,7 @@
     <Reference Include="0Harmony"/>
     <Reference Include="Assembly-CSharp"/>
     <Reference Include="UnityEngine.CoreModule"/>
+    <Reference Include="UnityEngine.PhysicsModule"/>
     <Reference Include="UnityModManager"/>
   </ItemGroup>
 </Project>

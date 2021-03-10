@@ -13,6 +13,8 @@ namespace DvMod.ZRealism
         [Draw("Fuel consumption multiplier")] public float fuelConsumptionMultiplier = 4f;
         [Draw("Oil consumption multiplier")] public float oilConsumptionMultiplier = 4f;
 
+        [Draw("Coupler strength")] public float couplerStrength = 1f;
+
         [Draw("Enable logging")] public bool enableLogging = false;
         public readonly string? version = Main.mod?.Info.Version;
 
