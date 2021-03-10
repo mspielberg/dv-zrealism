@@ -219,7 +219,7 @@ namespace DvMod.ZRealism
                 var cooling = airflow * temperatureDelta * Main.settings.dieselCoolingMultiplier * delta / __instance.timeMult;
                 __instance.engineTemp.AddNextValue(-cooling);
 
-                // Main.DebugLog(TrainCar.Resolve(__instance.gameObject), () => $"energy={energyInKJ}, heating={heating}, cooling={cooling}, engineTemp={engineTemp}, nextTemp={__instance.engineTemp.nextValue}, runningFans={state.runningFans}");
+                // Main.DebugLog(TrainCar.Resolve(__instance.gameObject), () => $"power={RawPowerInWatts(__instance)} W, heating={heating / delta * __instance.timeMult} *C/s, cooling={cooling / delta * __instance.timeMult} *C/s, engineTemp={engineTemp}, nextTemp={__instance.engineTemp.nextValue}, runningFans={state.runningFans}");
 
                 return false;
             }
