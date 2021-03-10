@@ -12,12 +12,12 @@ namespace DvMod.ZRealism
             {
                 var damageController = car.GetComponent<DamageController>();
                 // Main.DebugLog(() => $"Applying {Main.settings.runningThroughDamagePercent} damage to loco wheels");
-                damageController.ApplyDamage(damageController.wheels, damageController.wheels.fullHitPoints * Main.settings.runningThroughDamagePercent / 100);
+                damageController?.ApplyDamage(damageController.wheels, damageController.wheels.fullHitPoints * Main.settings.runningThroughDamagePercent / 100);
             }
             else
             {
                 // Main.DebugLog(() => $"Applying {Main.settings.runningThroughDamagePercent} damage to car, healthBefore={car.CarDamage.currentHealth}");
-                car.CarDamage.DamageCar(car.CarDamage.maxHealth * Main.settings.runningThroughDamagePercent / 100);
+                car.CarDamage?.DamageCar(car.CarDamage.maxHealth * Main.settings.runningThroughDamagePercent / 100);
                 // Main.DebugLog(() => $"healthAfter={car.CarDamage.currentHealth}");
             }
         }
