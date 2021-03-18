@@ -238,7 +238,7 @@ namespace DvMod.ZRealism
                 if (!__instance.engineOn)
                     return false;
 
-                var fuelUsage = DieselFuelUsage(RawPowerInWatts(__instance)) * Main.settings.fuelConsumptionMultiplier *
+                var fuelUsage = DieselFuelUsage(RawPowerInWatts(__instance)) * Main.settings.dieselFuelConsumptionMultiplier *
                     (delta / __instance.timeMult);
                 __instance.TotalFuelConsumed += fuelUsage;
                 __instance.fuel.AddNextValue(-fuelUsage);
@@ -255,7 +255,7 @@ namespace DvMod.ZRealism
             {
                 if (__instance.engineRPM.value <= 0.0 || __instance.oil.value <= 0.0)
                     return false;
-                var oilUsage = RawPowerInWatts(__instance) * OilConsumption * Main.settings.oilConsumptionMultiplier * delta / __instance.timeMult;
+                var oilUsage = RawPowerInWatts(__instance) * OilConsumption * Main.settings.dieselOilConsumptionMultiplier * delta / __instance.timeMult;
                 __instance.oil.AddNextValue(-oilUsage);
                 // Main.DebugLog(TrainCar.Resolve(__instance.gameObject), () => $"oil={__instance.oil.value} / {__instance.oil.max}, oilConsumption={oilUsage / (delta / __instance.timeMult) * 3600} Lph, timeToExhaust={__instance.oil.value/(oilUsage/(delta/__instance.timeMult))} s");
 

@@ -10,8 +10,11 @@ namespace DvMod.ZRealism
         [Draw("Diesel cooling")] public float dieselCoolingMultiplier = 1.0f;
         [Draw("Shunter cooling")] public float shunterTemperatureMultiplier = 0.5f;
 
-        [Draw("Fuel consumption multiplier")] public float fuelConsumptionMultiplier = 4f;
-        [Draw("Oil consumption multiplier")] public float oilConsumptionMultiplier = 4f;
+        [Draw("Diesel fuel consumption multiplier")] public float dieselFuelConsumptionMultiplier = 10f;
+        [Draw("Diesel oil consumption multiplier")] public float dieselOilConsumptionMultiplier = 20f;
+
+        [Draw("Shunter fuel consumption multiplier")] public float shunterFuelConsumptionMultiplier = 10f;
+        [Draw("Shunter oil consumption multiplier")] public float shunterOilConsumptionMultiplier = 20f;
 
         [Draw("Coupler strength")] public float couplerStrength = 1f;
 
