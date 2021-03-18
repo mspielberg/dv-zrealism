@@ -19,8 +19,11 @@
   <ItemGroup>
     <Reference Include="0Harmony"/>
     <Reference Include="Assembly-CSharp"/>
+    <Reference Include="UnityEngine.AudioModule"/>
     <Reference Include="UnityEngine.CoreModule"/>
     <Reference Include="UnityEngine.PhysicsModule"/>
+    <Reference Include="UnityEngine.UnityWebRequestModule" />
+    <Reference Include="UnityEngine.UnityWebRequestAudioModule" />
     <Reference Include="UnityModManager"/>
   </ItemGroup>
 </Project>
