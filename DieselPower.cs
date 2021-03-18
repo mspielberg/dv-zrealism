@@ -265,8 +265,8 @@ namespace DvMod.ZRealism
 
         public static class DieselSanding
         {
-            public const float SandCapacity = 2000f; // in kg; http://www.rr-fallenflags.org/manual/sd18-1.pdf p1
-            public const float SandingRate = 1f / 30f; // in kg/s; https://www.knorr-bremse.com/remote/media/documents/railvehicles/en/en_neu_2010/Sanding_systems.pdf
+            public const float SandCapacity = 1300f; // in .001 m^3; http://www.rr-fallenflags.org/manual/sd18-1.pdf p1
+            public const float SandingRate = 0.02f * 12; // in .001 m^3/s; https://www.knorr-bremse.com/remote/media/documents/railvehicles/en/en_neu_2010/Sanding_systems.pdf
 
             [HarmonyPatch(typeof(DieselLocoSimulation), nameof(DieselLocoSimulation.InitComponents))]
             public static class InitComponentsPatch
