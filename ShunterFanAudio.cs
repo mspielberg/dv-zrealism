@@ -45,12 +45,12 @@ namespace DvMod.ZRealism
 
             private static IEnumerator CoolingFanCoro(LocoAudioShunter locoAudio)
             {
+                var sim = locoAudio.GetComponentInParent<ShunterLocoSimulation>();
                 var layered = GetLayeredAudio(locoAudio);
-                var controller = (LocoControllerShunter)locoAudio.locoController;
                 while (true)
                 {
                     yield return null;
-                    layered.Set(controller.GetFan() ? 1f : 0f);
+                    layered.Set(ShunterPower.IsFanRunning(sim) ? 1f : 0f);
                 }
             }
 

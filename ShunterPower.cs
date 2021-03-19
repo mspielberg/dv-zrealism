@@ -1,4 +1,5 @@
 using HarmonyLib;
+using System.Collections.Generic;
 using UnityEngine;
 
 namespace DvMod.ZRealism
@@ -8,6 +9,48 @@ namespace DvMod.ZRealism
         private const float ThrottleGamma = 1.4f;
         public const float EngineMaxPower = 392_000; // 392 kW prime mover
         public const float TransmissionEfficiency = 0.85f;
+
+        private class ExtraState
+        {
+            private const float FanOnThreshold = 87f;
+            private const float FanOffThreshold = 82f;
+
+            private readonly LocoControllerShunter controller;
+            public bool fanRunning = false;
+
+            public ExtraState(LocoControllerShunter controller)
+            {
+                this.controller = controller;
+            }
+
+            public bool UpdateFan()
+            {
+                var temperature = controller.sim.engineTemp.value;
+                if (controller.GetFan())
+                    fanRunning = true;
+                else if (temperature > FanOnThreshold)
+                    fanRunning = true;
+                else if (temperature < FanOffThreshold)
+                    fanRunning = false;
+                return fanRunning;
+            }
+
+            private static readonly Dictionary<ShunterLocoSimulation, ExtraState> states =
+                new Dictionary<ShunterLocoSimulation, ExtraState>();
+
+            public static ExtraState Instance(ShunterLocoSimulation sim)
+            {
+                if (!states.TryGetValue(sim, out var state))
+                    states[sim] = state = new ExtraState(sim.GetComponent<LocoControllerShunter>());
+                return state;
+            }
+        }
+
+        public static bool IsFanRunning(ShunterLocoSimulation sim)
+        {
+            return ExtraState.Instance(sim).fanRunning;
+        }
+
         public static float CrankshaftPower(ShunterLocoSimulation sim)
         {
             var atIdle = sim.GetComponent<LocoControllerShunter>().reverser == 0f || sim.throttle.value == 0;
@@ -57,17 +100,18 @@ namespace DvMod.ZRealism
             public const float ThermostatTemp = 80f;
             public const float AmbientTemperature = 20f;
             public const float CoolingFanSpeedEquivalent = 50f;
-            public const float NoRadiatorSpeedEquivalent = 1f;
+            public const float NoRadiatorSpeedEquivalent = 5f;
             public static bool Prefix(ShunterLocoSimulation __instance, float delta)
             {
                 var heating = Mathf.Lerp(0.025f, 1f, __instance.engineRPM.value) * 12f;
                 if (__instance.engineOn)
                     __instance.engineTemp.AddNextValue(heating * delta);
 
+                var fanRunning = ExtraState.Instance(__instance).UpdateFan();
                 var thermostatOpen = __instance.engineTemp.value >= ThermostatTemp;
                 var airflow =
                     !thermostatOpen ? NoRadiatorSpeedEquivalent :
-                    __instance.GetComponent<LocoControllerShunter>().GetFan() && __instance.speed.value < CoolingFanSpeedEquivalent ? CoolingFanSpeedEquivalent :
+                    fanRunning && __instance.speed.value < CoolingFanSpeedEquivalent ? CoolingFanSpeedEquivalent :
                     __instance.speed.value;
                 var temperatureDelta = __instance.engineTemp.value - AmbientTemperature;
                 var cooling = airflow / CoolingFanSpeedEquivalent * temperatureDelta * Main.settings.shunterTemperatureMultiplier;
