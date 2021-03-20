@@ -15,6 +15,7 @@ namespace DvMod.ZRealism
                 if (spec.name == "C throttle" && spec is Lever leverSpec)
                 {
                     leverSpec.invertDirection ^= true;
+                    leverSpec.scrollWheelHoverScroll *= -1;
                 }
             }
         }
