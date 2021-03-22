@@ -56,7 +56,8 @@ namespace DvMod.ZRealism
 
         private static void DamageJunction(TrainCar car, Junction junction)
         {
-            car.GetComponentInChildren<TrainDerailAudio>().PlayDerailAudio(car);
+            if (Main.settings.playJunctionDamageSound)
+                car.GetComponentInChildren<TrainDerailAudio>().PlayDerailAudio(car);
             DebtController.RegisterDebt(new BrokenJunctionDebt(JunctionKey(junction)));
         }
 
@@ -68,12 +69,26 @@ namespace DvMod.ZRealism
                 var junction = first ? track.inJunction : track.outJunction;
                 if (junction == null)
                     return false;
+
+                var isBroken = JunctionIsBroken(junction);
                 var branchIndex = junction.outBranches.FindIndex(b => b.track == track);
                 // Main.DebugLog(() => $"branchIndex={branchIndex}, selectedBranch={junction.selectedBranch}");
-                if (branchIndex < 0 || branchIndex == junction.selectedBranch)
+                if (branchIndex < 0)
+                {
+                    // facing-point movement
+                    if (isBroken && Random.value < Main.settings.damagedJunctionDerailPercent / 100f)
+                        __instance.Derail("Passing over broken junction");
                     return false;
+                }
 
-                if (Random.value < Main.settings.runningThroughDamagePercent / 100f && !JunctionIsBroken(junction))
+                if (branchIndex == junction.selectedBranch)
+                {
+                    // trailing-point movement on correct branch
+                    return false;
+                }
+
+                // trailing-point movement on incorrect branch
+                if (!isBroken && Random.value < Main.settings.runningThroughDamagePercent / 100f)
                     DamageJunction(__instance.Car, junction);
                 if (Main.settings.forceSwitchOnRunningThrough)
                     junction.Switch(Junction.SwitchMode.FORCED);

@@ -20,7 +20,10 @@ namespace DvMod.ZRealism
         public static void Prefix(ControlSpec spec)
         {
             if (spec.name == "C throttle" && spec is Lever leverSpec)
-                leverSpec.notches = ThrottleNotching.NumNotches + 1;
+            {
+                leverSpec.invertDirection = true;
+                leverSpec.notches = ThrottleNotching.NumNotches + 1; // +1 for notch "0" (idle position)
+            }
         }
     }
 
