@@ -7,7 +7,7 @@ namespace DvMod.ZRealism
         [Draw("Force switches when running through junction")] public bool forceSwitchOnRunningThrough = false;
         [Draw("Chance to damage junction when running through")] public float runningThroughDamagePercent = 10f;
         [Draw("Play sound when junction damaged")] public bool playJunctionDamageSound = true;
-        [Draw("Chance to derail on damaged junction")] public float damagedJunctionDerailPercent = 10f;
+        [Draw("Chance for damaged junction to flip")] public float damagedJunctionFlipPercent = 10f;
 
         [Draw("Diesel cooling")] public float dieselCoolingMultiplier = 1.0f;
         [Draw("Shunter cooling")] public float shunterTemperatureMultiplier = 0.12f;

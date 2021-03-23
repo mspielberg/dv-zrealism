@@ -76,8 +76,8 @@ namespace DvMod.ZRealism
                 if (branchIndex < 0)
                 {
                     // facing-point movement
-                    if (isBroken && Random.value < Main.settings.damagedJunctionDerailPercent / 100f)
-                        __instance.Derail("Passing over broken junction");
+                    if (isBroken && Random.value < Main.settings.damagedJunctionFlipPercent / 100f)
+                        junction.Switch(Junction.SwitchMode.NO_SOUND);
                     return false;
                 }
 
