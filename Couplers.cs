@@ -18,7 +18,7 @@ namespace DvMod.ZRealism
             public static bool Prefix(Coupler __instance)
             {
                 // ignore tender joint
-                if (CarTypes.IsSteamLocomotive(__instance.train.carType) && !__instance.isFrontCoupler)
+                if (!Main.settings.enableCustomCouplers || CarTypes.IsSteamLocomotive(__instance.train.carType) && !__instance.isFrontCoupler)
                     return true;
 
                 var coupler = __instance;
