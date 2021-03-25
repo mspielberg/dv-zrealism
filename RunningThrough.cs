@@ -130,8 +130,11 @@ namespace DvMod.ZRealism
         {
             public static void Postfix(JObject savedData)
             {
-                foreach (var junctionKey in savedData[SaveKey])
-                    DebtController.RegisterDebt(new BrokenJunctionDebt((int)junctionKey));
+                if (savedData.TryGetValue(SaveKey, out var keys))
+                {
+                    foreach (var junctionKey in keys)
+                        DebtController.RegisterDebt(new BrokenJunctionDebt((int)junctionKey));
+                }
             }
         }
     }
