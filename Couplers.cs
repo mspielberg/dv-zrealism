@@ -7,10 +7,7 @@ namespace DvMod.ZRealism
     public static class Couplers
     {
         private const float ChainSpring = 1e12f;
-        private const float BufferSpring = 5e4f;
-        private const float BufferDamper = 1e5f;
-        private const float BreakStrength = 5e6f;
-        private const float CouplerSlop = 0.5f;
+        private const float CouplerSlop = 0.25f;
 
         [HarmonyPatch(typeof(Coupler), nameof(Coupler.CreateJoints))]
         public static class CreateJointsPatch
@@ -18,43 +15,33 @@ namespace DvMod.ZRealism
             public static bool Prefix(Coupler __instance)
             {
                 // ignore tender joint
-                if (!Main.settings.enableCustomCouplers || CarTypes.IsSteamLocomotive(__instance.train.carType) && !__instance.isFrontCoupler)
+                if (!Main.settings.enableCustomCouplers ||
+                    (CarTypes.IsSteamLocomotive(__instance.train.carType) && !__instance.isFrontCoupler))
+                {
                     return true;
+                }
 
                 var coupler = __instance;
-                var coupledToOffset = coupler.coupledTo.train.transform.InverseTransformPoint(coupler.coupledTo.transform.position);
-                coupledToOffset.z -= Mathf.Sign(coupledToOffset.z) * CouplerSlop / 2f;
+                var anchorOffset =  Vector3.forward * CouplerSlop * (coupler.isFrontCoupler ? -1f : 1f);
 
                 var cj = coupler.train.gameObject.AddComponent<ConfigurableJoint>();
                 cj.autoConfigureConnectedAnchor = false;
-                cj.anchor = coupler.train.transform.InverseTransformPoint(coupler.transform.position);
+                cj.anchor = coupler.transform.localPosition + anchorOffset;
                 cj.connectedBody = coupler.coupledTo.train.gameObject.GetComponent<Rigidbody>();
-                cj.connectedAnchor = coupledToOffset;
-                cj.xMotion = ConfigurableJointMotion.Free;
-                cj.yMotion = ConfigurableJointMotion.Free;
+                cj.connectedAnchor = coupler.coupledTo.transform.localPosition;
                 cj.zMotion = ConfigurableJointMotion.Limited;
-                cj.angularXMotion = ConfigurableJointMotion.Free;
-                cj.angularYMotion = ConfigurableJointMotion.Free;
-                cj.angularZMotion = ConfigurableJointMotion.Free;
 
                 var distance = coupler.transform.InverseTransformPoint(coupler.coupledTo.train.transform.TransformPoint(cj.connectedAnchor)).z;
 
-                cj.linearLimit = new SoftJointLimit { limit = Mathf.Max(CouplerSlop / 2, Mathf.Abs(distance)) };
+                cj.linearLimit = new SoftJointLimit { limit = Mathf.Max(CouplerSlop, Mathf.Abs(distance)) };
                 cj.linearLimitSpring = new SoftJointLimitSpring { spring = ChainSpring };
 
-                // Main.DebugLog(() => $"distance={distance}, limit={cj.linearLimit.limit}");
+                cj.targetPosition = -anchorOffset;
 
-                cj.zDrive = new JointDrive {
-                    positionSpring = BufferSpring,
-                    positionDamper = BufferDamper,
-                    maximumForce = BreakStrength * Main.settings.couplerStrength,
-                };
-                cj.targetPosition = new Vector3(0f, 0f, Mathf.Sign(__instance.transform.localPosition.z) * CouplerSlop / 2f);
-
-                cj.breakForce = BreakStrength;
-                cj.enableCollision = true;
+                cj.enableCollision = false;
 
                 coupler.springyCJ = cj;
+                ApplySettings(coupler);
                 coupler.jointCoroSpringy = coupler.StartCoroutine(TensionChainCoro(cj));
 
                 return false;
@@ -63,12 +50,31 @@ namespace DvMod.ZRealism
 
         private static IEnumerator TensionChainCoro(ConfigurableJoint cj)
         {
-            while (cj.linearLimit.limit > CouplerSlop / 2)
+            while (cj.linearLimit.limit > CouplerSlop)
             {
                 yield return WaitFor.FixedUpdate;
-                cj.linearLimit = new SoftJointLimit { limit = Mathf.Max(CouplerSlop / 2, cj.linearLimit.limit - 0.001f) };
-                // Main.DebugLog(() => $"newLimit={cj.linearLimit.limit}");
+                cj.linearLimit = new SoftJointLimit { limit = Mathf.Max(CouplerSlop, cj.linearLimit.limit - 0.001f) };
             }
+        }
+
+        public static void ApplySettings(Coupler coupler)
+        {
+                if (coupler.springyCJ == null)
+                    return;
+                var joint = coupler.springyCJ;
+                joint.zDrive = new JointDrive {
+                    positionSpring = Main.settings.bufferSpringRate * 1e4f,
+                    positionDamper = Main.settings.bufferDamperRate * 1e4f,
+                    maximumForce = float.PositiveInfinity,
+                };
+                joint.breakForce = 1e6f * Main.settings.couplerStrength;
+
+        }
+
+        public static void ApplySettings()
+        {
+            foreach (var coupler in Component.FindObjectsOfType<Coupler>())
+                ApplySettings(coupler);
         }
     }
 }
