@@ -43,9 +43,12 @@ namespace DvMod.ZRealism
         private static readonly Dictionary<Junction, int> _junctionKeys = new Dictionary<Junction, int>();
         private static int JunctionKey(Junction junction)
         {
-            if (!_junctionKeys.TryGetValue(junction, out var key))
-                _junctionKeys[junction] = key = System.Array.IndexOf(JunctionsSaveManager.OrderedJunctions, junction);
-            return key;
+            if (_junctionKeys.Count == 0)
+            {
+                foreach (var (j, i) in JunctionsSaveManager.OrderedJunctions.Select((x, i) => (x, i)))
+                    _junctionKeys[j] = i;
+            }
+            return _junctionKeys[junction];
         }
 
         private static bool JunctionIsBroken(Junction junction)
