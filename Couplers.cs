@@ -21,7 +21,13 @@ namespace DvMod.ZRealism
                     return true;
                 }
 
-                var coupler = __instance;
+                CreateTensionJoint(__instance);
+                CreateCompressionJoint(__instance);
+                return false;
+            }
+
+            private static void CreateTensionJoint(Coupler coupler)
+            {
                 var anchorOffset =  Vector3.forward * CouplerSlop * (coupler.isFrontCoupler ? -1f : 1f);
 
                 var cj = coupler.train.gameObject.AddComponent<ConfigurableJoint>();
@@ -31,24 +37,44 @@ namespace DvMod.ZRealism
                 cj.connectedAnchor = coupler.coupledTo.transform.localPosition;
                 cj.zMotion = ConfigurableJointMotion.Limited;
 
-                var distance = coupler.transform.InverseTransformPoint(coupler.coupledTo.train.transform.TransformPoint(cj.connectedAnchor)).z;
-
+                var distance = JointDelta(cj).z;
                 cj.linearLimit = new SoftJointLimit { limit = Mathf.Max(CouplerSlop, Mathf.Abs(distance)) };
                 cj.linearLimitSpring = new SoftJointLimitSpring { spring = ChainSpring };
-
+                cj.enableCollision = false;
                 cj.targetPosition = -anchorOffset;
 
-                cj.enableCollision = false;
+                ApplySettings(coupler);
 
                 coupler.springyCJ = cj;
-                ApplySettings(coupler);
-                coupler.jointCoroSpringy = coupler.StartCoroutine(TensionChainCoro(cj));
+                coupler.jointCoroSpringy = coupler.StartCoroutine(AdaptLimitCoro(cj));
+            }
 
-                return false;
+            private static void CreateCompressionJoint(Coupler coupler)
+            {
+                var cj = coupler.train.gameObject.AddComponent<ConfigurableJoint>();
+                cj.autoConfigureConnectedAnchor = false;
+                cj.anchor = coupler.transform.localPosition;
+                cj.connectedBody = coupler.coupledTo.train.gameObject.GetComponent<Rigidbody>();
+                cj.connectedAnchor = coupler.coupledTo.transform.localPosition;
+                cj.zMotion = ConfigurableJointMotion.Limited;
+
+                var distance = JointDelta(cj).z;
+                cj.linearLimit = new SoftJointLimit { limit = Mathf.Max(CouplerSlop, Mathf.Abs(distance)) };
+                cj.linearLimitSpring = new SoftJointLimitSpring { spring = ChainSpring };
+                cj.enableCollision = false;
+                cj.breakForce = float.PositiveInfinity;
+
+                coupler.rigidCJ = cj;
+                coupler.jointCoroRigid = coupler.StartCoroutine(AdaptLimitCoro(cj));
+            }
+
+            private static Vector3 JointDelta(Joint joint)
+            {
+                return joint.transform.InverseTransformPoint(joint.connectedBody.transform.TransformPoint(joint.connectedAnchor)) - joint.anchor;
             }
         }
 
-        private static IEnumerator TensionChainCoro(ConfigurableJoint cj)
+        private static IEnumerator AdaptLimitCoro(ConfigurableJoint cj)
         {
             while (cj.linearLimit.limit > CouplerSlop)
             {
