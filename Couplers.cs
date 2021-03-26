@@ -43,10 +43,9 @@ namespace DvMod.ZRealism
                 cj.enableCollision = false;
                 cj.targetPosition = -anchorOffset;
 
-                ApplySettings(coupler);
-
                 coupler.springyCJ = cj;
                 coupler.jointCoroSpringy = coupler.StartCoroutine(AdaptLimitCoro(cj));
+                ApplySettings(coupler);
             }
 
             private static void CreateCompressionJoint(Coupler coupler)
@@ -94,7 +93,6 @@ namespace DvMod.ZRealism
                     maximumForce = float.PositiveInfinity,
                 };
                 joint.breakForce = 1e6f * Main.settings.couplerStrength;
-
         }
 
         public static void ApplySettings()
