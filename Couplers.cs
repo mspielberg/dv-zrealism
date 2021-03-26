@@ -6,7 +6,7 @@ namespace DvMod.ZRealism
 {
     public static class Couplers
     {
-        private const float ChainSpring = 1e12f;
+        private const float ChainSpring = 2e7f; // ~1,200,000 lb/in
         private const float CouplerSlop = 0.25f;
 
         [HarmonyPatch(typeof(Coupler), nameof(Coupler.CreateJoints))]
