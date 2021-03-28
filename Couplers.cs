@@ -23,6 +23,8 @@ namespace DvMod.ZRealism
 
                 CreateTensionJoint(__instance);
                 CreateCompressionJoint(__instance);
+                var breaker = __instance.gameObject.AddComponent<CouplerBreaker>();
+                breaker.joint = __instance.springyCJ;
                 return false;
             }
 
@@ -42,6 +44,8 @@ namespace DvMod.ZRealism
                 cj.linearLimitSpring = new SoftJointLimitSpring { spring = ChainSpring };
                 cj.enableCollision = false;
                 cj.targetPosition = -anchorOffset;
+                cj.breakForce = float.PositiveInfinity;
+                cj.breakTorque = float.PositiveInfinity;
 
                 coupler.springyCJ = cj;
                 coupler.jointCoroSpringy = coupler.StartCoroutine(AdaptLimitCoro(cj));
@@ -62,6 +66,7 @@ namespace DvMod.ZRealism
                 cj.linearLimitSpring = new SoftJointLimitSpring { spring = ChainSpring };
                 cj.enableCollision = false;
                 cj.breakForce = float.PositiveInfinity;
+                cj.breakTorque = float.PositiveInfinity;
 
                 coupler.rigidCJ = cj;
                 coupler.jointCoroRigid = coupler.StartCoroutine(AdaptLimitCoro(cj));
@@ -92,7 +97,6 @@ namespace DvMod.ZRealism
                     positionDamper = Main.settings.bufferDamperRate * 1e4f,
                     maximumForce = float.PositiveInfinity,
                 };
-                joint.breakForce = 1e6f * Main.settings.couplerStrength;
         }
 
         public static void ApplySettings()
