@@ -31,6 +31,7 @@ namespace DvMod.ZRealism
             modEntry.OnGUI = OnGui;
             modEntry.OnSaveGUI = OnSaveGui;
             modEntry.OnToggle = OnToggle;
+            HeadsUpDisplayBridge.Init();
 
             return true;
         }
