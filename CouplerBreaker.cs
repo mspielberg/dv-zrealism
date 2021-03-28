@@ -15,9 +15,8 @@ namespace DvMod.ZRealism
                 Object.Destroy(this);
                 return;
             }
-            var car = TrainCar.Resolve(joint.gameObject);
             jointStress = ((1f - Alpha) * jointStress) + (Alpha * joint.currentForce.magnitude);
-            Main.DebugLog(car, () => $"currentForce={joint.currentForce.magnitude},jointStress={jointStress}");
+            // Main.DebugLog(TrainCar.Resolve(joint.gameObject), () => $"currentForce={joint.currentForce.magnitude},jointStress={jointStress}");
             if (jointStress > Main.settings.couplerStrength * 1e6)
             {
                 joint!.gameObject.SendMessage("OnJointBreak", jointStress);

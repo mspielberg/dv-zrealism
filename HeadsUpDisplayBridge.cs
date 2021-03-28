@@ -72,12 +72,13 @@ namespace DvMod.ZRealism
             }
 
             RegisterPull(
-                "Coupler stress",
-                car => {
-                    var breakers = car.GetComponentsInChildren<CouplerBreaker>();
-                    var stresses = breakers.Select(breaker => breaker.jointStress);
-                    return stresses.Any() ? stresses.Max() : (float?)null;
-                },
+                "Front coupler",
+                car => car.frontCoupler.GetComponent<CouplerBreaker>()?.jointStress,
+                v => $"{v / Main.settings.couplerStrength / 1e6:P0}");
+
+            RegisterPull(
+                "Rear coupler",
+                car => car.rearCoupler.GetComponent<CouplerBreaker>()?.jointStress,
                 v => $"{v / Main.settings.couplerStrength / 1e6:P0}");
         }
     }
