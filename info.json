@@ -2,7 +2,7 @@
   "Id": "ZRealism",
   "DisplayName": "Zeibach's Realism Overhaul",
   "Author": "Zeibach",
-  "Version": "0.2.0",
+  "Version": "0.2.1",
   "AssemblyName": "ZRealism.dll",
   "EntryMethod": "DvMod.ZRealism.Main.Load",
   "HomePage": "https://www.nexusmods.com/derailvalley/mods/???",
