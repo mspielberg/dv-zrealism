@@ -103,9 +103,9 @@ namespace DvMod.ZRealism
         [HarmonyPatch(typeof(Junction), nameof(Junction.Switch))]
         public static class SwitchPatch
         {
-            public static bool Prefix(Junction __instance)
+            public static bool Prefix(Junction __instance, Junction.SwitchMode mode)
             {
-                return !JunctionIsBroken(__instance);
+                return mode == Junction.SwitchMode.NO_SOUND || !JunctionIsBroken(__instance);
             }
         }
 
