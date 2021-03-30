@@ -37,16 +37,20 @@ namespace DvMod.ZRealism
                 cj.anchor = coupler.transform.localPosition + anchorOffset;
                 cj.connectedBody = coupler.coupledTo.train.gameObject.GetComponent<Rigidbody>();
                 cj.connectedAnchor = coupler.coupledTo.transform.localPosition;
+
                 cj.xMotion = ConfigurableJointMotion.Limited;
                 cj.yMotion = ConfigurableJointMotion.Limited;
                 cj.zMotion = ConfigurableJointMotion.Limited;
+                cj.angularYMotion = ConfigurableJointMotion.Limited;
+
+                cj.angularYLimit = new SoftJointLimit { limit = 30f };
 
                 var distance = JointDelta(cj).z;
                 cj.linearLimit = new SoftJointLimit { limit = Mathf.Max(CouplerSlop, Mathf.Abs(distance)) };
                 cj.linearLimitSpring = new SoftJointLimitSpring { spring = ChainSpring };
                 cj.enableCollision = false;
                 cj.breakForce = float.PositiveInfinity;
-                cj.breakTorque = float.PositiveInfinity;
+                cj.breakTorque = 1e3f;
 
                 coupler.springyCJ = cj;
                 coupler.jointCoroSpringy = coupler.StartCoroutine(AdaptLimitCoro(cj));
