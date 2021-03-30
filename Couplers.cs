@@ -37,6 +37,8 @@ namespace DvMod.ZRealism
                 cj.anchor = coupler.transform.localPosition + anchorOffset;
                 cj.connectedBody = coupler.coupledTo.train.gameObject.GetComponent<Rigidbody>();
                 cj.connectedAnchor = coupler.coupledTo.transform.localPosition;
+                cj.xMotion = ConfigurableJointMotion.Limited;
+                cj.yMotion = ConfigurableJointMotion.Limited;
                 cj.zMotion = ConfigurableJointMotion.Limited;
 
                 var distance = JointDelta(cj).z;
@@ -93,8 +95,8 @@ namespace DvMod.ZRealism
                     return;
                 var joint = coupler.springyCJ;
                 joint.zDrive = new JointDrive {
-                    positionSpring = Main.settings.bufferSpringRate * 1e4f,
-                    positionDamper = Main.settings.bufferDamperRate * 1e4f,
+                    positionSpring = Main.settings.bufferSpringRate * 1e6f,
+                    positionDamper = Main.settings.bufferDamperRate * 1e6f,
                     maximumForce = float.PositiveInfinity,
                 };
         }
