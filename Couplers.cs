@@ -45,17 +45,18 @@ namespace DvMod.ZRealism
                 cj.linearLimit = new SoftJointLimit { limit = Mathf.Max(CouplerSlop, Mathf.Abs(distance)) };
                 cj.linearLimitSpring = new SoftJointLimitSpring { spring = ChainSpring };
                 cj.enableCollision = false;
-                cj.targetPosition = -anchorOffset;
                 cj.breakForce = float.PositiveInfinity;
                 cj.breakTorque = float.PositiveInfinity;
 
                 coupler.springyCJ = cj;
                 coupler.jointCoroSpringy = coupler.StartCoroutine(AdaptLimitCoro(cj));
-                ApplySettings(coupler);
             }
 
             private static void CreateCompressionJoint(Coupler coupler)
             {
+                DestroyPrecoupleJoint(coupler);
+                DestroyPrecoupleJoint(coupler.coupledTo);
+
                 var cj = coupler.train.gameObject.AddComponent<ConfigurableJoint>();
                 cj.autoConfigureConnectedAnchor = false;
                 cj.anchor = coupler.transform.localPosition;
@@ -67,33 +68,142 @@ namespace DvMod.ZRealism
                 cj.linearLimit = new SoftJointLimit { limit = Mathf.Max(CouplerSlop, Mathf.Abs(distance)) };
                 cj.linearLimitSpring = new SoftJointLimitSpring { spring = ChainSpring };
                 cj.enableCollision = false;
+                cj.targetPosition = Vector3.zero;
                 cj.breakForce = float.PositiveInfinity;
                 cj.breakTorque = float.PositiveInfinity;
 
                 coupler.rigidCJ = cj;
                 coupler.jointCoroRigid = coupler.StartCoroutine(AdaptLimitCoro(cj));
+                ApplySettings(coupler);
             }
 
-            private static Vector3 JointDelta(Joint joint)
+            private static IEnumerator AdaptLimitCoro(ConfigurableJoint cj)
             {
-                return joint.transform.InverseTransformPoint(joint.connectedBody.transform.TransformPoint(joint.connectedAnchor)) - joint.anchor;
+                while (cj.linearLimit.limit > CouplerSlop)
+                {
+                    yield return WaitFor.FixedUpdate;
+                    cj.linearLimit = new SoftJointLimit { limit = Mathf.Max(CouplerSlop, cj.linearLimit.limit - 0.001f) };
+                }
             }
         }
 
-        private static IEnumerator AdaptLimitCoro(ConfigurableJoint cj)
+        // Ensure CouplingScanners always stay active
+        // TODO: disable when coupled, enable when uncoupled
+        [HarmonyPatch(typeof(ChainCouplerVisibilityOptimizer), nameof(ChainCouplerVisibilityOptimizer.Disable))]
+        public static class ChainCouplerVisibilityOptimizerDisablePatch
         {
-            while (cj.linearLimit.limit > CouplerSlop)
+            public static bool Prefix(ChainCouplerVisibilityOptimizer __instance)
+            {
+                if (!__instance.enabled)
+                    return false;
+                __instance.enabled = false;
+                __instance.chain.SetActive(false);
+                return false;
+            }
+        }
+
+        [HarmonyPatch(typeof(CouplingScanner), nameof(CouplingScanner.Start))]
+        public static class CouplingScannerStartPatch
+        {
+            public static void Postfix(CouplingScanner __instance)
+            {
+                var scanner = __instance;
+                __instance.ScanStateChanged += (CouplingScanner otherScanner) =>
+                {
+                    if (scanner == null)
+                        return;
+                    var car = TrainCar.Resolve(scanner.gameObject);
+                    if (car == null)
+                        return;
+                    var coupler = scanner.transform.localPosition.z > 0 ? car.frontCoupler : car.rearCoupler;
+                    if (coupler == null)
+                        return;
+
+                    if (otherScanner != null)
+                    {
+                        var otherCar = TrainCar.Resolve(otherScanner.gameObject);
+                        var otherCoupler = otherScanner.transform.localPosition.z > 0 ? otherCar.frontCoupler : otherCar.rearCoupler;
+                        CreatePrecoupleJoint(coupler, otherCoupler);
+                    }
+                    else
+                    {
+                        DestroyPrecoupleJoint(coupler);
+                    }
+                };
+            }
+        }
+
+        private static void CreatePrecoupleJoint(Coupler a, Coupler b)
+        {
+            if (a.rigidCJ || b.rigidCJ)
+                return;
+            Main.DebugLog(() => $"Creating precouple joint between {TrainCar.Resolve(a.gameObject)?.ID} and {TrainCar.Resolve(b.gameObject)?.ID}");
+
+            var cj = a.train.gameObject.AddComponent<ConfigurableJoint>();
+            cj.autoConfigureConnectedAnchor = false;
+            cj.anchor = a.transform.localPosition;
+            cj.connectedBody = b.train.gameObject.GetComponent<Rigidbody>();
+            cj.connectedAnchor = b.transform.localPosition;
+            cj.zMotion = ConfigurableJointMotion.Limited;
+
+            var distance = JointDelta(cj).z;
+            cj.linearLimit = new SoftJointLimit { limit = float.PositiveInfinity };
+            cj.linearLimitSpring = new SoftJointLimitSpring { spring = ChainSpring };
+            cj.enableCollision = false;
+            cj.targetPosition = Vector3.zero;
+            cj.breakForce = float.PositiveInfinity;
+            cj.breakTorque = float.PositiveInfinity;
+
+            a.rigidCJ = cj;
+            a.jointCoroRigid = a.StartCoroutine(AdaptPrecoupleJointCoro(cj));
+        }
+
+        private static void DestroyPrecoupleJoint(Coupler coupler)
+        {
+            if (coupler.rigidCJ == null)
+                return;
+            Main.DebugLog(() => $"Destroying precouple joint between {TrainCar.Resolve(coupler.gameObject)?.ID} and {TrainCar.Resolve(coupler.rigidCJ.connectedBody.gameObject)?.ID}");
+            if (coupler.jointCoroRigid != null)
+            {
+                coupler.StopCoroutine(coupler.jointCoroRigid);
+                coupler.jointCoroRigid = null;
+            }
+            Component.Destroy(coupler.rigidCJ);
+        }
+
+        private static IEnumerator AdaptPrecoupleJointCoro(ConfigurableJoint cj)
+        {
+            while (true)
             {
                 yield return WaitFor.FixedUpdate;
-                cj.linearLimit = new SoftJointLimit { limit = Mathf.Max(CouplerSlop, cj.linearLimit.limit - 0.001f) };
+                var distance = JointDelta(cj).z;
+                if (distance > 0.01)
+                {
+                    cj.zDrive = new JointDrive {
+                        positionSpring = Main.settings.bufferSpringRate * 1e6f,
+                        positionDamper = Main.settings.bufferDamperRate * 1e6f,
+                        maximumForce = float.PositiveInfinity,
+                    };
+                    cj.linearLimit = new SoftJointLimit { limit = CouplerSlop };
+                }
+                else
+                {
+                    cj.zDrive = default;
+                    cj.linearLimit = new SoftJointLimit { limit = float.PositiveInfinity };
+                }
             }
+        }
+
+        private static Vector3 JointDelta(Joint joint)
+        {
+            return joint.transform.InverseTransformPoint(joint.connectedBody.transform.TransformPoint(joint.connectedAnchor)) - joint.anchor;
         }
 
         public static void ApplySettings(Coupler coupler)
         {
-                if (coupler.springyCJ == null)
+                var joint = coupler.rigidCJ;
+                if (joint == null)
                     return;
-                var joint = coupler.springyCJ;
                 joint.zDrive = new JointDrive {
                     positionSpring = Main.settings.bufferSpringRate * 1e6f,
                     positionDamper = Main.settings.bufferDamperRate * 1e6f,
