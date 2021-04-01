@@ -21,10 +21,14 @@ namespace DvMod.ZRealism
                     return true;
                 }
 
+                Main.DebugLog(() => $"Creating coupler joints between {__instance.train.ID} and {__instance.coupledTo.train.ID}");
                 CreateTensionJoint(__instance);
                 CreateCompressionJoint(__instance);
                 var breaker = __instance.gameObject.AddComponent<CouplerBreaker>();
                 breaker.joint = __instance.springyCJ;
+                // Main.DebugLog(() => $"before: {__instance.Uncoupled.GetInvocationList().Length}");
+                __instance.Uncoupled += OnUncoupled;
+                // Main.DebugLog(() => $"after: {__instance.Uncoupled.GetInvocationList().Length}");
                 return false;
             }
 
@@ -137,9 +141,18 @@ namespace DvMod.ZRealism
             }
         }
 
+        private static void OnUncoupled(object coupler, UncoupleEventArgs args)
+        {
+            Main.DebugLog(() => $"Running OnUncoupled on {args.thisCoupler.rigidCJ} ajg {args.otherCoupler.rigidCJ}");
+            args.thisCoupler.Uncoupled -= OnUncoupled;
+            CreatePrecoupleJoint(args.thisCoupler, args.otherCoupler);
+        }
+
         private static void CreatePrecoupleJoint(Coupler a, Coupler b)
         {
-            if (a.rigidCJ || b.rigidCJ)
+            if (a.IsCoupled() || b.IsCoupled())
+                return;
+            if ((a.rigidCJ && !a.springyCJ) || (b.rigidCJ && !b.springyCJ)) // already connected with precouple joint
                 return;
             Main.DebugLog(() => $"Creating precouple joint between {TrainCar.Resolve(a.gameObject)?.ID} and {TrainCar.Resolve(b.gameObject)?.ID}");
 
