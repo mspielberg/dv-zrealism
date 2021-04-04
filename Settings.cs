@@ -19,7 +19,7 @@ namespace DvMod.ZRealism
         [Draw("Shunter oil consumption multiplier")] public float shunterOilConsumptionMultiplier = 50f;
 
         [Draw("Use custom couplers (EXPERIMENTAL)")] public bool enableCustomCouplers = false;
-        [Draw("Coupler strength", Min=0.1f, VisibleOn = "enableCustomCouplers|true")] public float couplerStrength = 1.5f;
+        [Draw("Coupler strength", Min = 0.1f, VisibleOn = "enableCustomCouplers|true")] public float couplerStrength = 1.5f;
         [Draw("Coupler stress smoothing", Min = 0, Max = 1, VisibleOn = "enableCustomCouplers|true")] public float couplerStressSmoothing = 0.1f;
         [Draw("Buffer spring rate", VisibleOn = "enableCustomCouplers|true")] public float bufferSpringRate = 6f;
         [Draw("Buffer damper rate", VisibleOn = "enableCustomCouplers|true")] public float bufferDamperRate = 2f;

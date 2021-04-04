@@ -44,7 +44,6 @@ namespace DvMod.ZRealism
         static private void OnSaveGui(UnityModManager.ModEntry modEntry)
         {
             settings.Save(modEntry);
-            Couplers.ApplySettings();
         }
 
         static private bool OnToggle(UnityModManager.ModEntry modEntry, bool value)
