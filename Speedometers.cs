@@ -14,10 +14,15 @@ namespace DvMod.ZRealism
             else if (loco.GetComponent<LocoWheelRotationViaCode>() is var lwrvc && lwrvc != null)
             {
                 var drivingForce = loco.drivingForce;
-                var revSpeed = loco.drivingForce.wheelslip > 0f ? Mathf.Lerp(lwrvc.curRevSpeed, lwrvc.WHEELSLIP_SPEED_MAX, loco.drivingForce.wheelslip) : lwrvc.curRevSpeed;
+                var revSpeed = drivingForce.wheelslip > 0f ? Mathf.Lerp(lwrvc.curRevSpeed, lwrvc.WHEELSLIP_SPEED_MAX, drivingForce.wheelslip) : lwrvc.curRevSpeed;
                 return Mathf.Abs(revSpeed * lwrvc.wheelCircumference * 3.6f);
             }
             return default;
+        }
+
+        private static float GetSpeedometerSpeed(LocoControllerBase loco)
+        {
+            return Mathf.Max(Mathf.Abs(loco.GetSpeedKmH()), GetWheelSpeedKmH(loco));
         }
 
         [HarmonyPatch(typeof(IndicatorsDiesel), nameof(IndicatorsDiesel.Update))]
@@ -25,7 +30,7 @@ namespace DvMod.ZRealism
         {
             public static void Postfix(IndicatorsDiesel __instance)
             {
-                __instance.speed.value = GetWheelSpeedKmH(__instance.ctrl);
+                __instance.speed.value = GetSpeedometerSpeed(__instance.ctrl);
             }
         }
 
@@ -34,7 +39,7 @@ namespace DvMod.ZRealism
         {
             public static void Postfix(IndicatorsShunter __instance)
             {
-                __instance.speed.value = GetWheelSpeedKmH(__instance.ctrl);
+                __instance.speed.value = GetSpeedometerSpeed(__instance.ctrl);
             }
         }
 
@@ -43,7 +48,7 @@ namespace DvMod.ZRealism
         {
             public static void Postfix(IndicatorsSteam __instance)
             {
-                __instance.speed.value = GetWheelSpeedKmH(__instance.ctrl);
+                __instance.speed.value = GetSpeedometerSpeed(__instance.ctrl);
             }
         }
     }
