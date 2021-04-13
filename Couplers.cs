@@ -140,6 +140,29 @@ namespace DvMod.ZRealism
             }
         }
 
+        [HarmonyPatch(typeof(CouplingScanner), nameof(CouplingScanner.MasterCoro))]
+        public static class CouplerScannerMasterCoroPatch
+        {
+            public static bool Prefix(CouplingScanner __instance, ref IEnumerator __result)
+            {
+                __result = ReplacementCoro(__instance);
+                return false;
+            }
+
+            private static IEnumerator ReplacementCoro(CouplingScanner __instance)
+            {
+                var wait = WaitFor.Seconds(0.1f);
+                while (true)
+                {
+                    yield return wait;
+                    var offset = __instance.transform.InverseTransformPoint(__instance.nearbyScanner.transform.position);
+                    if (Mathf.Abs(offset.x) > 1.6f || Mathf.Abs(offset.z) > 2f)
+                        break;
+                }
+                __instance.Unpair(true);
+            }
+        }
+
         private static void CreateCompressionJoint(Coupler a, Coupler b)
         {
             Main.DebugLog(() => $"Creating compression joint between {TrainCar.Resolve(a.gameObject)?.ID} and {TrainCar.Resolve(b.gameObject)?.ID}");
