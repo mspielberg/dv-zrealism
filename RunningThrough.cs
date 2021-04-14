@@ -60,7 +60,11 @@ namespace DvMod.ZRealism
         private static void DamageJunction(TrainCar car, Junction junction)
         {
             if (Main.settings.playJunctionDamageSound)
-                car.GetComponentInChildren<TrainDerailAudio>().PlayDerailAudio(car);
+            {
+                var clip = car.GetComponentInChildren<CarCollisionSounds>().impactClips.Last();
+                clip.Play(junction.transform.position, 1f, Random.Range(0.95f, 1.05f), 0f, 1f, 500f, default(AudioSourceCurves), AudioManager.e ? AudioManager.e.collisionGroup : null);
+                DV.CommsRadioController.PlayAudioFromCar(clip, car);
+            }
             DebtController.RegisterDebt(new BrokenJunctionDebt(JunctionKey(junction)));
         }
 

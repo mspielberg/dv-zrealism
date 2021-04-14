@@ -20,6 +20,7 @@
     <Reference Include="0Harmony"/>
     <Reference Include="Assembly-CSharp"/>
     <Reference Include="DV.Utils"/>
+    <Reference Include="NAudio"/>
     <Reference Include="Newtonsoft.Json"/>
     <Reference Include="UnityEngine.AudioModule"/>
     <Reference Include="UnityEngine.CoreModule"/>
