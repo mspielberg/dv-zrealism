@@ -4,7 +4,7 @@
     <LangVersion>8.0</LangVersion>
     <Nullable>enable</Nullable>
     <RootNamespace>DvMod.ZRealism</RootNamespace>
-    <InformationalVersion>0.2.3</InformationalVersion>
+    <InformationalVersion>0.2.4</InformationalVersion>
   </PropertyGroup>
 
   <ItemGroup>
