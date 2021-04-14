@@ -1,5 +1,6 @@
 using HarmonyLib;
 using System.Collections;
+using System.Collections.Generic;
 using UnityEngine;
 
 namespace DvMod.ZRealism
@@ -35,24 +36,35 @@ namespace DvMod.ZRealism
         [HarmonyPatch(typeof(Coupler), nameof(Coupler.Uncouple))]
         public static class UncouplePatch
         {
-            private static ConfigurableJoint? compressionJoint;
-            private static Coroutine? coro;
+            private static readonly Dictionary<Coupler, ConfigurableJoint> compressionJoints = new Dictionary<Coupler, ConfigurableJoint>();
+            private static readonly Dictionary<Coupler, Coroutine> coros = new Dictionary<Coupler, Coroutine>();
 
             public static void Prefix(Coupler __instance)
             {
-                compressionJoint = __instance.rigidCJ;
                 // Prevent Uncouple from destroying compression joint
+                compressionJoints[__instance] = __instance.rigidCJ;
                 __instance.rigidCJ = null;
-                coro = __instance.jointCoroRigid;
+                coros[__instance] = __instance.jointCoroRigid;
                 __instance.jointCoroRigid = null;
             }
 
             public static void Postfix(Coupler __instance)
             {
-                __instance.rigidCJ = compressionJoint;
-                compressionJoint = null;
-                __instance.jointCoroRigid = coro;
-                coro = null;
+                __instance.rigidCJ = compressionJoints[__instance];
+                compressionJoints.Remove(__instance);
+                __instance.jointCoroRigid = coros[__instance];
+                coros.Remove(__instance);
+            }
+        }
+
+        [HarmonyPatch(typeof(CarSpawner), nameof(CarSpawner.PrepareTrainCarForDeleting))]
+        public static class PrepareTrainCarForDeletingPatch
+        {
+            public static void Postfix(TrainCar trainCar)
+            {
+                // remove pre-coupling joints, if any
+                DestroyCompressionJoint(trainCar.frontCoupler);
+                DestroyCompressionJoint(trainCar.rearCoupler);
             }
         }
 
