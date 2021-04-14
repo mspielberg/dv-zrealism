@@ -7,6 +7,8 @@ namespace DvMod.ZRealism
 {
     public static class Couplers
     {
+        private static readonly bool enabled = Main.settings.enableCustomCouplers;
+
         private const float ChainSpring = 2e7f; // ~1,200,000 lb/in
         private const float ChainSlop = 0.5f;
         private const float BufferTravel = 0.25f;
@@ -17,7 +19,7 @@ namespace DvMod.ZRealism
             public static bool Prefix(Coupler __instance)
             {
                 // ignore tender joint
-                if (!Main.settings.enableCustomCouplers ||
+                if (!enabled ||
                     (CarTypes.IsSteamLocomotive(__instance.train.carType) && !__instance.isFrontCoupler))
                 {
                     return true;
@@ -41,6 +43,8 @@ namespace DvMod.ZRealism
 
             public static void Prefix(Coupler __instance)
             {
+                if (!enabled)
+                    return;
                 // Prevent Uncouple from destroying compression joint
                 compressionJoints[__instance] = __instance.rigidCJ;
                 __instance.rigidCJ = null;
@@ -50,6 +54,8 @@ namespace DvMod.ZRealism
 
             public static void Postfix(Coupler __instance)
             {
+                if (!enabled)
+                    return;
                 __instance.rigidCJ = compressionJoints[__instance];
                 compressionJoints.Remove(__instance);
                 __instance.jointCoroRigid = coros[__instance];
@@ -112,6 +118,8 @@ namespace DvMod.ZRealism
         {
             public static bool Prefix(ChainCouplerVisibilityOptimizer __instance)
             {
+                if (!enabled)
+                    return true;
                 if (!__instance.enabled)
                     return false;
                 __instance.enabled = false;
@@ -125,6 +133,8 @@ namespace DvMod.ZRealism
         {
             public static void Postfix(CouplingScanner __instance)
             {
+                if (!enabled)
+                    return;
                 var scanner = __instance;
                 __instance.ScanStateChanged += (CouplingScanner otherScanner) =>
                 {
@@ -157,6 +167,8 @@ namespace DvMod.ZRealism
         {
             public static bool Prefix(CouplingScanner __instance, ref IEnumerator __result)
             {
+                if (!enabled)
+                    return true;
                 __result = ReplacementCoro(__instance);
                 return false;
             }

@@ -30,8 +30,9 @@ namespace DvMod.ZRealism
 
             modEntry.OnGUI = OnGui;
             modEntry.OnSaveGUI = OnSaveGui;
-            modEntry.OnToggle = OnToggle;
             HeadsUpDisplayBridge.Init();
+            Harmony harmony = new Harmony(modEntry.Info.Id);
+            harmony.PatchAll();
 
             return true;
         }
@@ -44,20 +45,6 @@ namespace DvMod.ZRealism
         static private void OnSaveGui(UnityModManager.ModEntry modEntry)
         {
             settings.Save(modEntry);
-        }
-
-        static private bool OnToggle(UnityModManager.ModEntry modEntry, bool value)
-        {
-            Harmony harmony = new Harmony(modEntry.Info.Id);
-            if (value)
-            {
-                harmony.PatchAll();
-            }
-            else
-            {
-                harmony.UnpatchAll(modEntry.Info.Id);
-            }
-            return true;
         }
 
         public static void DebugLog(TrainCar car, Func<string> message)
