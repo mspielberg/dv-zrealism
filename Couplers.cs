@@ -175,7 +175,7 @@ namespace DvMod.ZRealism
 
             private static IEnumerator ReplacementCoro(CouplingScanner __instance)
             {
-                var wait = WaitFor.Seconds(0.1f);
+                var wait = WaitFor.Seconds(1f);
                 while (true)
                 {
                     yield return wait;
@@ -187,27 +187,47 @@ namespace DvMod.ZRealism
             }
         }
 
+        private static readonly Dictionary<Coupler, ConfigurableJoint> bufferJoints = new Dictionary<Coupler, ConfigurableJoint>();
+
         private static void CreateCompressionJoint(Coupler a, Coupler b)
         {
             Main.DebugLog(() => $"Creating compression joint between {TrainCar.Resolve(a.gameObject)?.ID} and {TrainCar.Resolve(b.gameObject)?.ID}");
 
-            var cj = a.train.gameObject.AddComponent<ConfigurableJoint>();
-            cj.autoConfigureConnectedAnchor = false;
-            cj.anchor = a.transform.localPosition;
-            cj.connectedBody = b.train.gameObject.GetComponent<Rigidbody>();
-            cj.connectedAnchor = b.transform.localPosition;
-            cj.zMotion = ConfigurableJointMotion.Limited;
+            // create fully rigid (bottoming out) joint
+            var bottomedCj = a.train.gameObject.AddComponent<ConfigurableJoint>();
+            bottomedCj.autoConfigureConnectedAnchor = false;
+            bottomedCj.anchor = a.transform.localPosition + (2 * (a.isFrontCoupler ? Vector3.forward : Vector3.back));
+            bottomedCj.connectedBody = b.train.gameObject.GetComponent<Rigidbody>();
+            bottomedCj.connectedAnchor = b.transform.localPosition;
+            bottomedCj.zMotion = ConfigurableJointMotion.Limited;
 
-            var distance = JointDelta(cj, a.isFrontCoupler).z;
-            cj.linearLimit = new SoftJointLimit { limit = float.PositiveInfinity };
-            cj.linearLimitSpring = new SoftJointLimitSpring { spring = ChainSpring };
-            cj.enableCollision = false;
-            cj.targetPosition = Vector3.zero;
-            cj.breakForce = float.PositiveInfinity;
-            cj.breakTorque = float.PositiveInfinity;
+            bottomedCj.linearLimit = new SoftJointLimit { limit = BufferTravel + 2f };
+            bottomedCj.linearLimitSpring = new SoftJointLimitSpring { spring = ChainSpring };
+            bottomedCj.enableCollision = false;
+            bottomedCj.breakForce = float.PositiveInfinity;
+            bottomedCj.breakTorque = float.PositiveInfinity;
 
-            a.rigidCJ = cj;
-            a.jointCoroRigid = a.StartCoroutine(AdaptCompressionJointCoro(cj, a.isFrontCoupler));
+            a.rigidCJ = bottomedCj;
+
+            // create buffer joint
+            var bufferCj = a.train.gameObject.AddComponent<ConfigurableJoint>();
+            bufferCj.autoConfigureConnectedAnchor = false;
+            bufferCj.anchor = a.transform.localPosition + (2 * (a.isFrontCoupler ? Vector3.forward : Vector3.back));
+            bufferCj.connectedBody = b.train.gameObject.GetComponent<Rigidbody>();
+            bufferCj.connectedAnchor = b.transform.localPosition;
+            bufferCj.zMotion = ConfigurableJointMotion.Limited;
+
+            bufferCj.linearLimit = new SoftJointLimit { limit = 2f };
+            bufferCj.linearLimitSpring = new SoftJointLimitSpring
+            {
+                spring = Main.settings.bufferSpringRate * 1e6f,
+                damper = Main.settings.bufferDamperRate * 1e6f,
+            };
+            bufferCj.enableCollision = false;
+            bufferCj.breakForce = float.PositiveInfinity;
+            bufferCj.breakTorque = float.PositiveInfinity;
+
+            bufferJoints[a] = bufferCj;
         }
 
         private static void DestroyCompressionJoint(Coupler coupler)
@@ -221,29 +241,9 @@ namespace DvMod.ZRealism
                 coupler.jointCoroRigid = null;
             }
             Component.Destroy(coupler.rigidCJ);
-        }
-
-        private static IEnumerator AdaptCompressionJointCoro(ConfigurableJoint cj, bool isFrontCoupler)
-        {
-            while (true)
-            {
-                yield return WaitFor.FixedUpdate;
-                var distance = JointDelta(cj, isFrontCoupler).z;
-                if (distance < -0.01)
-                {
-                    cj.zDrive = new JointDrive {
-                        positionSpring = Main.settings.bufferSpringRate * 1e6f,
-                        positionDamper = Main.settings.bufferDamperRate * 1e6f,
-                        maximumForce = float.PositiveInfinity,
-                    };
-                    cj.linearLimit = new SoftJointLimit { limit = BufferTravel };
-                }
-                else
-                {
-                    cj.zDrive = default;
-                    cj.linearLimit = new SoftJointLimit { limit = float.PositiveInfinity };
-                }
-            }
+            coupler.rigidCJ = null;
+            Component.Destroy(bufferJoints[coupler]);
+            bufferJoints.Remove(coupler);
         }
 
         private static Vector3 JointDelta(Joint joint, bool isFrontCoupler)
