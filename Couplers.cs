@@ -13,6 +13,32 @@ namespace DvMod.ZRealism
         private const float ChainSlop = 0.5f;
         private const float BufferTravel = 0.25f;
 
+        private static CouplingScanner GetScanner(Coupler coupler)
+        {
+            return coupler.train.GetComponentsInChildren<CouplingScanner>()[coupler.isFrontCoupler ? 0 : 1];
+        }
+
+        private static void KillCouplingScanner(Coupler coupler)
+        {
+            var scanner = GetScanner(coupler);
+            if (scanner.masterCoro != null)
+            {
+                Main.DebugLog(() => $"{coupler.train.ID}: killing masterCoro for {(coupler.isFrontCoupler ? "front" : "rear")}");
+                scanner.StopCoroutine(scanner.masterCoro);
+                scanner.masterCoro = null;
+            }
+        }
+
+        private static void RestartCouplingScanner(Coupler coupler)
+        {
+            var scanner = GetScanner(coupler);
+            if (scanner.masterCoro == null)
+            {
+                Main.DebugLog(() => $"{coupler.train.ID}: restarting masterCoro for {(coupler.isFrontCoupler ? "front" : "rear")}");
+                scanner.masterCoro = scanner.StartCoroutine(scanner.MasterCoro());
+            }
+        }
+
         [HarmonyPatch(typeof(Coupler), nameof(Coupler.CreateJoints))]
         public static class CreateJointsPatch
         {
@@ -31,6 +57,8 @@ namespace DvMod.ZRealism
                 breaker.joint = __instance.springyCJ;
                 if (__instance.rigidCJ == null && __instance.coupledTo.rigidCJ == null)
                     CreateCompressionJoint(__instance, __instance.coupledTo);
+                KillCouplingScanner(__instance);
+                KillCouplingScanner(__instance.coupledTo);
                 return false;
             }
         }
@@ -50,6 +78,9 @@ namespace DvMod.ZRealism
                 __instance.rigidCJ = null;
                 coros[__instance] = __instance.jointCoroRigid;
                 __instance.jointCoroRigid = null;
+
+                RestartCouplingScanner(__instance);
+                RestartCouplingScanner(__instance.coupledTo);
             }
 
             public static void Postfix(Coupler __instance)
@@ -111,8 +142,7 @@ namespace DvMod.ZRealism
             }
         }
 
-        // Ensure CouplingScanners always stay active
-        // TODO: disable when coupled, enable when uncoupled
+        // Ensure CouplingScanners stay active when not in view
         [HarmonyPatch(typeof(ChainCouplerVisibilityOptimizer), nameof(ChainCouplerVisibilityOptimizer.Disable))]
         public static class ChainCouplerVisibilityOptimizerDisablePatch
         {
@@ -152,7 +182,9 @@ namespace DvMod.ZRealism
                         var otherCar = TrainCar.Resolve(otherScanner.gameObject);
                         var otherCoupler = otherScanner.transform.localPosition.z > 0 ? otherCar.frontCoupler : otherCar.rearCoupler;
                         if (coupler.rigidCJ == null && otherCoupler.rigidCJ == null)
+                        {
                             CreateCompressionJoint(coupler, otherCoupler);
+                        }
                     }
                     else
                     {
@@ -173,8 +205,27 @@ namespace DvMod.ZRealism
                 return false;
             }
 
+            private static Coupler GetCoupler(CouplingScanner scanner)
+            {
+                var car = TrainCar.Resolve(scanner.gameObject);
+                return scanner.transform.localPosition.z > 0 ? car.frontCoupler : car.rearCoupler;
+            }
+
             private static IEnumerator ReplacementCoro(CouplingScanner __instance)
             {
+                yield return null;
+                var coupler = GetCoupler(__instance);
+                if (coupler.IsCoupled())
+                {
+                    Main.DebugLog(() => $"{coupler.train.ID}: MasterCoro exiting immediately");
+                    __instance.masterCoro = null;
+                    yield break;
+                }
+                else
+                {
+                    Main.DebugLog(() => $"{coupler.train.ID}: MasterCoro started");
+                }
+
                 var wait = WaitFor.Seconds(1f);
                 while (true)
                 {
