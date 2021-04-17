@@ -1,6 +1,7 @@
 using HarmonyLib;
 using System.Collections;
 using System.Collections.Generic;
+using System.Linq;
 using UnityEngine;
 
 namespace DvMod.ZRealism
@@ -15,7 +16,10 @@ namespace DvMod.ZRealism
 
         private static CouplingScanner GetScanner(Coupler coupler)
         {
-            return coupler.train.GetComponentsInChildren<CouplingScanner>()[coupler.isFrontCoupler ? 0 : 1];
+            var scanners = coupler.train.transform.Find("[buffers]").GetComponentsInChildren<CouplingScanner>();
+            if (coupler.isFrontCoupler)
+                return scanners.First(scanner => scanner.transform.localPosition.z > 0);
+            return scanners.First(scanner => scanner.transform.localPosition.z < 0);
         }
 
         private static void KillCouplingScanner(Coupler coupler)
