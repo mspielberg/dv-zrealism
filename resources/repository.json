@@ -1,6 +1,7 @@
 {
   "Releases":
   [
+      {"Id": "ZRealism", "Version": "0.2.6", "DownloadUrl": "https://github.com/mspielberg/dv-zrealism/releases/download/v0.2.6/ZRealism_0.2.6.zip"},
       {"Id": "ZRealism", "Version": "0.2.5", "DownloadUrl": "https://github.com/mspielberg/dv-zrealism/releases/download/v0.2.5/ZRealism_0.2.5.zip"},
       {"Id": "ZRealism", "Version": "0.2.4", "DownloadUrl": "https://github.com/mspielberg/dv-zrealism/releases/download/v0.2.4/ZRealism_0.2.4.zip"},
       {"Id": "ZRealism", "Version": "0.2.3", "DownloadUrl": "https://github.com/mspielberg/dv-zrealism/releases/download/v0.2.3/ZRealism_0.2.3.zip"},
