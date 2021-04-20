@@ -103,6 +103,8 @@ namespace DvMod.ZRealism
         {
             public static void Postfix(TrainCar trainCar)
             {
+                if (!enabled)
+                    return;
                 // remove pre-coupling joints, if any
                 DestroyCompressionJoint(trainCar.frontCoupler);
                 DestroyCompressionJoint(trainCar.rearCoupler);
