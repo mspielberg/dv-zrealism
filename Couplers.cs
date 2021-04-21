@@ -1,7 +1,6 @@
 using HarmonyLib;
 using System.Collections;
 using System.Collections.Generic;
-using System.Linq;
 using UnityEngine;
 
 namespace DvMod.ZRealism
@@ -14,18 +13,21 @@ namespace DvMod.ZRealism
         private const float ChainSlop = 0.5f;
         private const float BufferTravel = 0.25f;
 
-        private static CouplingScanner GetScanner(Coupler coupler)
+        private static CouplingScanner? GetScanner(Coupler coupler)
         {
             var scanners = coupler.train.transform.Find("[buffers]").GetComponentsInChildren<CouplingScanner>();
-            if (coupler.isFrontCoupler)
-                return scanners.First(scanner => scanner.transform.localPosition.z > 0);
-            return scanners.First(scanner => scanner.transform.localPosition.z < 0);
+            var scanner = coupler.isFrontCoupler
+                ? System.Array.Find(scanners, scanner => scanner.transform.localPosition.z > 0)
+                : System.Array.Find(scanners, scanner => scanner.transform.localPosition.z < 0);
+            if (scanner == null)
+                Debug.Log($"Could not find scanner for {(coupler.isFrontCoupler ? "front" : "rear")} coupler on {coupler.train.ID}");
+            return scanner;
         }
 
         private static void KillCouplingScanner(Coupler coupler)
         {
             var scanner = GetScanner(coupler);
-            if (scanner.masterCoro != null)
+            if (scanner?.masterCoro != null)
             {
                 Main.DebugLog(() => $"{coupler.train.ID}: killing masterCoro for {(coupler.isFrontCoupler ? "front" : "rear")}");
                 scanner.StopCoroutine(scanner.masterCoro);
@@ -36,7 +38,7 @@ namespace DvMod.ZRealism
         private static void RestartCouplingScanner(Coupler coupler)
         {
             var scanner = GetScanner(coupler);
-            if (scanner.masterCoro == null)
+            if (scanner != null && scanner.masterCoro == null)
             {
                 Main.DebugLog(() => $"{coupler.train.ID}: restarting masterCoro for {(coupler.isFrontCoupler ? "front" : "rear")}");
                 scanner.masterCoro = scanner.StartCoroutine(scanner.MasterCoro());
