@@ -37,6 +37,8 @@ namespace DvMod.ZRealism
 
         private static void RestartCouplingScanner(Coupler coupler)
         {
+            if (coupler == null)
+                return;
             var scanner = GetScanner(coupler);
             if (scanner != null && scanner.masterCoro == null)
             {
