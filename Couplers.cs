@@ -10,7 +10,7 @@ namespace DvMod.ZRealism
         private static readonly bool enabled = Main.settings.enableCustomCouplers;
 
         private const float ChainSpring = 2e7f; // ~1,200,000 lb/in
-        private const float ChainSlop = 0.5f;
+        private const float ChainSlop = 1.0f;
         private const float BufferTravel = 0.25f;
 
         private static CouplingScanner? GetScanner(Coupler coupler)
