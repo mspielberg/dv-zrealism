@@ -38,18 +38,6 @@ namespace DvMod.ZRealism
             typeof(IComparable)
         };
 
-        private static readonly Type[] RegisterPushArgumentTypes = new Type[]
-        {
-            typeof(string),
-            typeof(Formatter),
-            typeof(IComparable)
-        };
-
-        private static readonly Type[] GetPusherArgumentTypes = new Type[]
-        {
-            typeof(string)
-        };
-
         private HeadsUpDisplayBridge(UnityModManager.ModEntry hudMod)
         {
             void RegisterPull(string label, Provider provider, Formatter formatter, IComparable? order = null)
@@ -59,16 +47,6 @@ namespace DvMod.ZRealism
                     out var _,
                     new object?[] { label, provider, formatter, order },
                     RegisterPullArgumentTypes);
-            }
-
-            void RegisterPush(out Pusher pusher, string label, Formatter formatter, IComparable? order = null)
-            {
-                hudMod.Invoke(
-                    "DvMod.HeadsUpDisplay.Registry.RegisterPush",
-                    out var temp,
-                    new object?[] { label, formatter, order },
-                    RegisterPushArgumentTypes);
-                pusher = (Pusher)temp;
             }
 
             RegisterPull(
