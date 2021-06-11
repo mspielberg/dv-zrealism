@@ -1,6 +1,7 @@
 using HarmonyLib;
 using System.Collections;
 using System.Collections.Generic;
+using System.Runtime.CompilerServices;
 using UnityEngine;
 
 namespace DvMod.ZRealism
@@ -248,7 +249,7 @@ namespace DvMod.ZRealism
             }
         }
 
-        private static readonly Dictionary<Coupler, ConfigurableJoint> bufferJoints = new Dictionary<Coupler, ConfigurableJoint>();
+        internal static readonly ConditionalWeakTable<Coupler, ConfigurableJoint> bufferJoints = new ConditionalWeakTable<Coupler, ConfigurableJoint>();
 
         private static void CreateCompressionJoint(Coupler a, Coupler b)
         {
@@ -288,7 +289,7 @@ namespace DvMod.ZRealism
             bufferCj.breakForce = float.PositiveInfinity;
             bufferCj.breakTorque = float.PositiveInfinity;
 
-            bufferJoints[a] = bufferCj;
+            bufferJoints.Add(a, bufferCj);
         }
 
         private static void DestroyCompressionJoint(Coupler coupler)
@@ -303,7 +304,8 @@ namespace DvMod.ZRealism
             }
             Component.Destroy(coupler.rigidCJ);
             coupler.rigidCJ = null;
-            Component.Destroy(bufferJoints[coupler]);
+            if (bufferJoints.TryGetValue(coupler, out var bufferJoint))
+                Component.Destroy(bufferJoint);
             bufferJoints.Remove(coupler);
         }
 
