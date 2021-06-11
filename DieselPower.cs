@@ -7,7 +7,8 @@ namespace DvMod.ZRealism
 {
     public static class DieselPower
     {
-        private const float ThrottleGamma = 1.4f;
+        private const float IdleUsage = 45000f; // 45 kW usage at idle
+        private const float ThrottleGamma = 1.56f;
         public const int NumNotches = 8;
         public const float EngineMaxPower = 1_300_000; // 1.3 MW prime mover
         public const float TransmissionEfficiency = 0.85f;
@@ -23,8 +24,7 @@ namespace DvMod.ZRealism
             var atIdle = sim.GetComponent<LocoControllerDiesel>().reverser == 0f || sim.throttle.value == 0;
             var motivePower = atIdle ? 0f : EngineMaxPower * OutputPower(sim.engineRPM.value);
             // 100 kW to run accessories
-            var accessoryPower = (0.1f + sim.engineRPM.value) * 100e3f;
-            return motivePower + accessoryPower;
+            return motivePower + IdleUsage;
         }
 
         private enum TransitionState
@@ -226,7 +226,7 @@ namespace DvMod.ZRealism
         }
 
         private const float DieselEnergyContent = 36e6f; /* J/L */
-        private const float ThermalEfficiency = 0.30f;
+        private const float ThermalEfficiency = 0.33f;
         /// <summary>Returns fuel usage in L/s.</summary>
         public static float DieselFuelUsage(float energyJ) => energyJ / DieselEnergyContent / ThermalEfficiency;
 
