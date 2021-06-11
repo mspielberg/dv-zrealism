@@ -11,7 +11,9 @@ namespace DvMod.ZRealism
         private static readonly bool enabled = Main.settings.enableCustomCouplers;
 
         private const float ChainSpring = 2e7f; // ~1,200,000 lb/in
-        private const float ChainSlop = 1.0f;
+        private const float LooseChainLength = 1.1f;
+        private const float TightChainLength = 1.0f;
+        private const float TightenSpeed = 0.1f;
         private const float BufferTravel = 0.25f;
 
         private static CouplingScanner? GetScanner(Coupler coupler)
@@ -41,7 +43,7 @@ namespace DvMod.ZRealism
             if (coupler == null)
                 return;
             var scanner = GetScanner(coupler);
-            if (scanner != null && scanner.masterCoro == null)
+            if (scanner != null && scanner.masterCoro == null && scanner.isActiveAndEnabled)
             {
                 Main.DebugLog(() => $"{coupler.train.ID}: restarting masterCoro for {(coupler.isFrontCoupler ? "front" : "rear")}");
                 scanner.masterCoro = scanner.StartCoroutine(scanner.MasterCoro());
@@ -118,7 +120,7 @@ namespace DvMod.ZRealism
 
         private static void CreateTensionJoint(Coupler coupler)
         {
-            var anchorOffset =  Vector3.forward * ChainSlop * (coupler.isFrontCoupler ? -1f : 1f);
+            var anchorOffset =  Vector3.forward * TightChainLength * (coupler.isFrontCoupler ? -1f : 1f);
 
             var cj = coupler.train.gameObject.AddComponent<ConfigurableJoint>();
             cj.autoConfigureConnectedAnchor = false;
@@ -133,23 +135,52 @@ namespace DvMod.ZRealism
 
             cj.angularYLimit = new SoftJointLimit { limit = 30f };
 
-            var distance = JointDelta(cj, coupler.isFrontCoupler).z;
-            cj.linearLimit = new SoftJointLimit { limit = Mathf.Max(ChainSlop, Mathf.Abs(distance)) };
+            cj.linearLimit = new SoftJointLimit { limit = LooseChainLength };
             cj.linearLimitSpring = new SoftJointLimitSpring { spring = ChainSpring };
             cj.enableCollision = false;
             cj.breakForce = float.PositiveInfinity;
             cj.breakTorque = 1e3f;
 
             coupler.springyCJ = cj;
-            coupler.jointCoroSpringy = coupler.StartCoroutine(AdaptTensionJointCoro(cj));
+            if (!LooseChain.enabled)
+                TightenChain(coupler);
         }
 
-        private static IEnumerator AdaptTensionJointCoro(ConfigurableJoint cj)
+        public static void TightenChain(Coupler coupler)
         {
-            while (cj.linearLimit.limit > ChainSlop)
+            if (coupler.springyCJ == null)
+                return;
+            if (coupler.jointCoroSpringy != null)
+                coupler.StopCoroutine(coupler.jointCoroSpringy);
+            coupler.jointCoroSpringy = coupler.StartCoroutine(TightenChainCoro(coupler.springyCJ));
+        }
+
+        private static IEnumerator TightenChainCoro(ConfigurableJoint cj)
+        {
+            while (cj.linearLimit.limit > TightChainLength)
             {
                 yield return WaitFor.FixedUpdate;
-                cj.linearLimit = new SoftJointLimit { limit = Mathf.Max(ChainSlop, cj.linearLimit.limit - 0.001f) };
+                var tightenAmount = Time.deltaTime * TightenSpeed;
+                cj.linearLimit = new SoftJointLimit { limit = Mathf.Max(TightChainLength, cj.linearLimit.limit - tightenAmount) };
+            }
+        }
+
+        public static void LoosenChain(Coupler coupler)
+        {
+            if (coupler.springyCJ == null)
+                return;
+            if (coupler.jointCoroSpringy != null)
+                coupler.StopCoroutine(coupler.jointCoroSpringy);
+            coupler.jointCoroSpringy = coupler.StartCoroutine(LoosenChainCoro(coupler.springyCJ));
+        }
+
+        private static IEnumerator LoosenChainCoro(ConfigurableJoint cj)
+        {
+            while (cj.linearLimit.limit < LooseChainLength)
+            {
+                yield return WaitFor.FixedUpdate;
+                var tightenAmount = Time.deltaTime * TightenSpeed;
+                cj.linearLimit = new SoftJointLimit { limit = Mathf.Min(LooseChainLength, cj.linearLimit.limit + tightenAmount) };
             }
         }
 
