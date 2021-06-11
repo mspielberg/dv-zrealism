@@ -42,8 +42,8 @@ namespace DvMod.ZRealism
             }
         }
 
-        [HarmonyPatch(typeof(ChainCouplerInteraction), nameof(ChainCouplerInteraction.Entry_Attached_Tightening_Couple))]
-        public static class EntryAttachedTighteningCouplePatch
+        [HarmonyPatch(typeof(ChainCouplerInteraction), nameof(ChainCouplerInteraction.Entry_Attached_Tight))]
+        public static class EntryAttachedTightPatch
         {
             public static void Postfix(ChainCouplerInteraction __instance)
             {
@@ -54,7 +54,7 @@ namespace DvMod.ZRealism
             }
         }
 
-        [HarmonyPatch(typeof(ChainCouplerInteraction), nameof(ChainCouplerInteraction.Entry_Attached_Loosening_Uncouple))]
+        [HarmonyPatch(typeof(ChainCouplerInteraction), nameof(ChainCouplerInteraction.Entry_Attached_Loose))]
         public static class EntryAttachedLooseningUncouplePatch
         {
             public static void Postfix(ChainCouplerInteraction __instance)
