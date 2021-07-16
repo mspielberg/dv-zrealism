@@ -149,7 +149,11 @@ namespace DvMod.ZRealism
         public static void TightenChain(Coupler coupler)
         {
             if (coupler.springyCJ == null)
+            {
+                if (coupler.coupledTo?.springyCJ != null)
+                    TightenChain(coupler.coupledTo);
                 return;
+            }
             if (coupler.jointCoroSpringy != null)
                 coupler.StopCoroutine(coupler.jointCoroSpringy);
             coupler.jointCoroSpringy = coupler.StartCoroutine(TightenChainCoro(coupler.springyCJ));
@@ -168,7 +172,11 @@ namespace DvMod.ZRealism
         public static void LoosenChain(Coupler coupler)
         {
             if (coupler.springyCJ == null)
+            {
+                if (coupler.coupledTo?.springyCJ != null)
+                    LoosenChain(coupler.coupledTo);
                 return;
+            }
             if (coupler.jointCoroSpringy != null)
                 coupler.StopCoroutine(coupler.jointCoroSpringy);
             coupler.jointCoroSpringy = coupler.StartCoroutine(LoosenChainCoro(coupler.springyCJ));
