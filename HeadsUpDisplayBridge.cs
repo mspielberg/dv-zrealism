@@ -35,29 +35,46 @@ namespace DvMod.ZRealism
             typeof(string),
             typeof(Provider),
             typeof(Formatter),
-            typeof(IComparable)
+            typeof(IComparable),
+            typeof(bool),
         };
 
         private HeadsUpDisplayBridge(UnityModManager.ModEntry hudMod)
         {
-            void RegisterPull(string label, Provider provider, Formatter formatter, IComparable? order = null)
+            void RegisterPull(string label, Provider provider, Formatter formatter, IComparable? order = null, bool hidden = false)
             {
                 hudMod.Invoke(
                     "DvMod.HeadsUpDisplay.Registry.RegisterPull",
                     out var _,
-                    new object?[] { label, provider, formatter, order },
+                    new object?[] { label, provider, formatter, order, hidden },
                     RegisterPullArgumentTypes);
             }
 
             RegisterPull(
                 "Front coupler",
                 car => car.frontCoupler.GetComponent<CouplerBreaker>()?.jointStress,
-                v => $"{v / Main.settings.couplerStrength / 1e6:P0}");
+                v => $"{v / Main.settings.couplerStrength / 1e6f:P0}",
+                hidden: true);
 
             RegisterPull(
                 "Rear coupler",
                 car => car.rearCoupler.GetComponent<CouplerBreaker>()?.jointStress,
-                v => $"{v / Main.settings.couplerStrength / 1e6:P0}");
+                v => $"{v / Main.settings.couplerStrength / 1e6f:P0}",
+                hidden: true);
+
+            RegisterPull(
+                "Fuel consumption",
+                car =>
+                {
+                    if (car.carType == TrainCarType.LocoDiesel)
+                        return DieselPower.DieselFuelUsage(DieselPower.RawPowerInWatts(car.GetComponentInChildren<DieselLocoSimulation>()));
+                    else if (CarTypes.IsShunterLocomotive(car.carType))
+                        return ShunterFuelPatch.DieselFuelUsage(ShunterPower.RawPowerInWatts(car.GetComponentInChildren<ShunterLocoSimulation>()));
+                    else
+                        return null;
+                },
+                v => $"{v * 3600f:F0} L/h"
+            );
         }
     }
 }
