@@ -149,7 +149,7 @@ namespace DvMod.ZRealism
         public const float OilConsumption = 1e-10f;
         public static bool Prefix(ShunterLocoSimulation __instance, float delta)
         {
-            if (__instance.engineRPM.value <= 0.0 || __instance.oil.value <= 0.0)
+            if (!__instance.engineOn || __instance.oil.value <= 0.0)
                 return false;
             var oilUsage = ShunterPower.RawPowerInWatts(__instance) * OilConsumption * Main.settings.shunterOilConsumptionMultiplier * delta / __instance.timeMult;
             __instance.oil.AddNextValue(-oilUsage);

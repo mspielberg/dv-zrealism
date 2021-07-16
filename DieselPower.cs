@@ -23,7 +23,6 @@ namespace DvMod.ZRealism
         {
             var atIdle = sim.GetComponent<LocoControllerDiesel>().reverser == 0f || sim.throttle.value == 0;
             var motivePower = atIdle ? 0f : EngineMaxPower * OutputPower(sim.engineRPM.value);
-            // 100 kW to run accessories
             return motivePower + IdleUsage;
         }
 
@@ -238,8 +237,7 @@ namespace DvMod.ZRealism
                 if (!__instance.engineOn)
                     return false;
 
-                var fuelUsage = DieselFuelUsage(RawPowerInWatts(__instance)) * Main.settings.dieselFuelConsumptionMultiplier *
-                    (delta / __instance.timeMult);
+                var fuelUsage = DieselFuelUsage(RawPowerInWatts(__instance) * (delta / __instance.timeMult)) * Main.settings.dieselFuelConsumptionMultiplier;
                 __instance.TotalFuelConsumed += fuelUsage;
                 __instance.fuel.AddNextValue(-fuelUsage);
                 // Main.DebugLog(TrainCar.Resolve(__instance.gameObject), () => $"fuel={__instance.fuel.value} / {__instance.fuel.max}, fuelConsumption={fuelUsage / (delta / __instance.timeMult) * 3600} Lph, timeToExhaust={__instance.fuel.value/(fuelUsage/(delta/__instance.timeMult))} s");
@@ -253,7 +251,7 @@ namespace DvMod.ZRealism
             public const float OilConsumption = 1e-9f;
             public static bool Prefix(DieselLocoSimulation __instance, float delta)
             {
-                if (__instance.engineRPM.value <= 0.0 || __instance.oil.value <= 0.0)
+                if (!__instance.engineOn || __instance.oil.value <= 0.0)
                     return false;
                 var oilUsage = RawPowerInWatts(__instance) * OilConsumption * Main.settings.dieselOilConsumptionMultiplier * delta / __instance.timeMult;
                 __instance.oil.AddNextValue(-oilUsage);
