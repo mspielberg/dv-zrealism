@@ -99,6 +99,7 @@ namespace DvMod.ZRealism
                 bool flag = Vector3.Distance(__instance.chainRingAnchor.position, __instance.parkedAnchor.position) < 0.2f;
                 bool flag2 = (bool)__instance.closestAttachPoint &&
                     __instance.closestAttachPoint.isActiveAndEnabled &&
+                    Vector3.SqrMagnitude(__instance.ownAttachPoint.transform.position - __instance.closestAttachPoint.transform.position) < ChainCouplerInteraction.AUTO_DETACH_DISTANCE_SQR &&
                     (Vector3.Distance(__instance.chainRingAnchor.position, __instance.closestAttachPoint.transform.position) < 0.1f ||
                         Vector3.Dot(__instance.transform.forward, __instance.chainRingAnchor.position - __instance.closestAttachPoint.transform.position) > 0f);
                 if (__instance.couplerAdapter.IsCoupled())
