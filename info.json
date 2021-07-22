@@ -5,6 +5,6 @@
   "Version": "0.3.0",
   "AssemblyName": "ZRealism.dll",
   "EntryMethod": "DvMod.ZRealism.Main.Load",
-  "HomePage": "https://www.nexusmods.com/derailvalley/mods/???",
+  "HomePage": "https://www.nexusmods.com/derailvalley/mods/238",
   "Repository": "https://raw.githubusercontent.com/mspielberg/dv-zrealism/master/resources/repository.json"
 }
