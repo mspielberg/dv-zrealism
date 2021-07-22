@@ -8,7 +8,7 @@ namespace DvMod.ZRealism
     public static class LooseChain
     {
         public static readonly bool enabled = Main.settings.coupleOnChainHooked;
-        private static readonly HashSet<ChainCouplerInteraction> looseCouplers = new HashSet<ChainCouplerInteraction>();
+        private static readonly HashSet<Coupler> looseCouplers = new HashSet<Coupler>();
 
         [HarmonyPatch(typeof(ChainCouplerInteraction), nameof(ChainCouplerInteraction.Entry_Attached_Loose))]
         public static class EntryAttachedLoosePatch
@@ -28,7 +28,7 @@ namespace DvMod.ZRealism
             {
                 if (!enabled)
                     return;
-                looseCouplers.Add(__instance);
+                looseCouplers.Add(__instance.couplerAdapter.coupler);
                 __instance.couplerAdapter.TryUncouple();
             }
         }
@@ -49,7 +49,7 @@ namespace DvMod.ZRealism
             {
                 if (!enabled)
                     return;
-                looseCouplers.Remove(__instance);
+                looseCouplers.Remove(__instance.couplerAdapter.coupler);
                 Couplers.TightenChain(__instance.couplerAdapter.coupler);
             }
         }
@@ -61,7 +61,7 @@ namespace DvMod.ZRealism
             {
                 if (!enabled)
                     return;
-                looseCouplers.Add(__instance);
+                looseCouplers.Add(__instance.couplerAdapter.coupler);
                 Couplers.LoosenChain(__instance.couplerAdapter.coupler);
             }
         }
@@ -104,7 +104,7 @@ namespace DvMod.ZRealism
                         Vector3.Dot(__instance.transform.forward, __instance.chainRingAnchor.position - __instance.closestAttachPoint.transform.position) > 0f);
                 if (__instance.couplerAdapter.IsCoupled())
                 {
-                    ChainCouplerInteraction chainCouplerInteraction = __instance.couplerAdapter.coupler?.coupledTo?.visualCoupler?.chain?.GetComponent<ChainCouplerInteraction>()!;
+                    ChainCouplerInteraction chainCouplerInteraction = __instance.couplerAdapter.coupler.coupledTo?.visualCoupler?.chain?.GetComponent<ChainCouplerInteraction>()!;
                     if (!chainCouplerInteraction)
                     {
                         __result = ChainCouplerInteraction.State.Disabled;
@@ -116,7 +116,7 @@ namespace DvMod.ZRealism
                         __result = ChainCouplerInteraction.State.Other_Attached_Parked;
                         return false;
                     }
-                    if (looseCouplers.Contains(__instance))
+                    if (looseCouplers.Contains(__instance.couplerAdapter.coupler))
                     {
                         __result = ChainCouplerInteraction.State.Attached_Loose;
                         return false;
