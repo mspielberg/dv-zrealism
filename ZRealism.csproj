@@ -19,6 +19,7 @@
   <ItemGroup>
     <Reference Include="0Harmony"/>
     <Reference Include="Assembly-CSharp"/>
+    <Reference Include="Assembly-CSharp-firstpass"/>
     <Reference Include="DV.Utils"/>
     <Reference Include="NAudio"/>
     <Reference Include="Newtonsoft.Json"/>

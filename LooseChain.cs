@@ -24,7 +24,7 @@ namespace DvMod.ZRealism
         [HarmonyPatch(typeof(ChainCouplerInteraction), nameof(ChainCouplerInteraction.Entry_Being_Dragged))]
         public static class EntryBeingDraggedPatch
         {
-            public static void Postfix(ChainCouplerInteraction __instance)
+            public static void Prefix(ChainCouplerInteraction __instance)
             {
                 if (!enabled)
                     return;
@@ -89,6 +89,22 @@ namespace DvMod.ZRealism
             }
         }
 
+        [HarmonyPatch(typeof(ChainCouplerInteraction), nameof(ChainCouplerInteraction.Exit_Attached))]
+        public static class ExitAttachedPatch
+        {
+            public static bool Prefix(ChainCouplerInteraction __instance)
+            {
+                __instance.attachedIK.solver.target = null;
+                __instance.attachedTo = null;
+                __instance.closestAttachPoint.SetAttachState(attached: false);
+                __instance.screwButtonBase.Used -= __instance.OnScrewButtonUsed;
+                __instance.screwButtonBase = null;
+                __instance.screwButton.SetActive(value: false);
+                __instance.GetComponent<HackIK>().target = 1f;
+                return false;
+            }
+        }
+
         [HarmonyPatch(typeof(ChainCouplerInteraction), nameof(ChainCouplerInteraction.DetermineNextState))]
         public static class DetermineNextStatePatch
         {
@@ -111,19 +127,17 @@ namespace DvMod.ZRealism
                         return false;
                     }
                     __instance.closestAttachPoint = chainCouplerInteraction.ownAttachPoint;
-                    if (chainCouplerInteraction.fsm?.IsInState(ChainCouplerInteraction.State.Attached) == true)
+                    if (chainCouplerInteraction.fsm?.IsInState(ChainCouplerInteraction.State.Attached) == true
+                        && __instance.attachedTo?.attachedTo == __instance)
                     {
                         __result = ChainCouplerInteraction.State.Other_Attached_Parked;
                         return false;
                     }
-                    if (looseCouplers.Contains(__instance.couplerAdapter.coupler))
+                    if (__instance.couplerAdapter.coupler.springyCJ != null)
                     {
-                        __result = ChainCouplerInteraction.State.Attached_Loose;
-                        return false;
-                    }
-                    else
-                    {
-                        __result = ChainCouplerInteraction.State.Attached_Tight;
+                        __result = looseCouplers.Contains(__instance.couplerAdapter.coupler)
+                            ? ChainCouplerInteraction.State.Attached_Loose
+                            : ChainCouplerInteraction.State.Attached_Tight;
                         return false;
                     }
                 }
