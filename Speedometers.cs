@@ -1,3 +1,7 @@
+using System.Collections;
+using System.Collections.Generic;
+using System.Reflection;
+using System.Reflection.Emit;
 using HarmonyLib;
 using UnityEngine;
 
@@ -25,30 +29,59 @@ namespace DvMod.ZRealism
             return Mathf.Max(Mathf.Abs(loco.GetSpeedKmH()), GetWheelSpeedKmH(loco));
         }
 
-        [HarmonyPatch(typeof(IndicatorsDiesel), nameof(IndicatorsDiesel.Update))]
-        public static class IndicatorsDieselUpdatePatch
+        [HarmonyPatch]
+        public static class IndicatorsRemoveSpeedometerUpdatePatch
+        {
+            public static IEnumerable<MethodBase> TargetMethods()
+            {
+                yield return AccessTools.Method(typeof(IndicatorsDiesel), nameof(IndicatorsDiesel.Update));
+                yield return AccessTools.Method(typeof(IndicatorsShunter), nameof(IndicatorsShunter.Update));
+                yield return AccessTools.Method(typeof(IndicatorsSteam), nameof(IndicatorsSteam.Update));
+            }
+
+            public static IEnumerable<CodeInstruction> Transpiler(IEnumerable<CodeInstruction> instructions)
+            {
+                List<CodeInstruction> insts = new List<CodeInstruction>(instructions);
+                var index = insts.FindIndex(inst => inst.opcode == OpCodes.Ldfld && inst.operand is FieldInfo field && field.Name == "speed");
+                if (index >= 0)
+                    insts.RemoveRange(index, 6);
+                return insts;
+            }
+        }
+
+        private static IEnumerator UpdateSpeedometerCoro(Indicator speedometer, LocoControllerBase controller)
+        {
+            while (true)
+            {
+                yield return WaitFor.Seconds(1f);
+                speedometer.value = GetSpeedometerSpeed(controller);
+            }
+        }
+
+        [HarmonyPatch(typeof(IndicatorsDiesel), nameof(IndicatorsDiesel.Start))]
+        public static class IndicatorsDieselStartPatch
         {
             public static void Postfix(IndicatorsDiesel __instance)
             {
-                __instance.speed.value = GetSpeedometerSpeed(__instance.ctrl);
+                __instance.StartCoroutine(UpdateSpeedometerCoro(__instance.speed, __instance.ctrl));
             }
         }
 
-        [HarmonyPatch(typeof(IndicatorsShunter), nameof(IndicatorsShunter.Update))]
-        public static class IndicatorsShunterUpdatePatch
+        [HarmonyPatch(typeof(IndicatorsShunter), nameof(IndicatorsShunter.Start))]
+        public static class IndicatorsShunterStartPatch
         {
             public static void Postfix(IndicatorsShunter __instance)
             {
-                __instance.speed.value = GetSpeedometerSpeed(__instance.ctrl);
+                __instance.StartCoroutine(UpdateSpeedometerCoro(__instance.speed, __instance.ctrl));
             }
         }
 
-        [HarmonyPatch(typeof(IndicatorsSteam), nameof(IndicatorsSteam.Update))]
-        public static class IndicatorsSteamUpdatePatch
+        [HarmonyPatch(typeof(IndicatorsSteam), nameof(IndicatorsSteam.Start))]
+        public static class IndicatorsSteamStartPatch
         {
             public static void Postfix(IndicatorsSteam __instance)
             {
-                __instance.speed.value = GetSpeedometerSpeed(__instance.ctrl);
+                __instance.StartCoroutine(UpdateSpeedometerCoro(__instance.speed, __instance.ctrl));
             }
         }
     }
