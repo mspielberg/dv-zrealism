@@ -18,7 +18,9 @@ namespace DvMod.ZRealism
 
         private static CouplingScanner? GetScanner(Coupler coupler)
         {
-            var scanners = coupler.train.transform.Find("[buffers]").GetComponentsInChildren<CouplingScanner>();
+            var scanners = coupler.train.transform.Find("[buffers]")?.GetComponentsInChildren<CouplingScanner>();
+            if (scanners == null)
+                return null;
             var scanner = coupler.isFrontCoupler
                 ? System.Array.Find(scanners, scanner => scanner.transform.localPosition.z > 0)
                 : System.Array.Find(scanners, scanner => scanner.transform.localPosition.z < 0);
