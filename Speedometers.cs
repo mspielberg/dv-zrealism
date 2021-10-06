@@ -43,18 +43,27 @@ namespace DvMod.ZRealism
             {
                 List<CodeInstruction> insts = new List<CodeInstruction>(instructions);
                 var index = insts.FindIndex(inst => inst.opcode == OpCodes.Ldfld && inst.operand is FieldInfo field && field.Name == "speed");
-                if (index >= 0)
-                    insts.RemoveRange(index, 6);
+                if (index >= 1)
+                    insts.RemoveRange(index - 1, 6);
                 return insts;
             }
         }
 
         private static IEnumerator UpdateSpeedometerCoro(Indicator speedometer, LocoControllerBase controller)
         {
+            float lastUpdate = 0f;
+            float needlePosition = 0f;
+            float needleTarget = 0f;
+            float velo = 0f;
             while (true)
             {
-                yield return WaitFor.Seconds(1f);
-                speedometer.value = GetSpeedometerSpeed(controller);
+                yield return null;
+                if (Time.time - lastUpdate >= Main.settings.speedometerUpdatePeriod)
+                {
+                    lastUpdate = Time.time;
+                    needleTarget = GetSpeedometerSpeed(controller);
+                }
+                speedometer.value = needlePosition = Mathf.SmoothDamp(needlePosition, needleTarget, ref velo, Main.settings.speedometerSmoothing);
             }
         }
 
