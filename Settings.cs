@@ -18,6 +18,7 @@ namespace DvMod.ZRealism
         [Draw("Shunter fuel consumption multiplier")] public float shunterFuelConsumptionMultiplier = 10f;
         [Draw("Shunter oil consumption multiplier")] public float shunterOilConsumptionMultiplier = 50f;
 
+        [Draw("Speedometer volume", Min=0f, Max=1f)] public float speedometerVolume = 0.2f;
         [Draw("Speedometer update period")] public float speedometerUpdatePeriod = 0.9f;
         [Draw("Speedometer smoothing")] public float speedometerSmoothing = 0.05f;
 
@@ -38,6 +39,7 @@ namespace DvMod.ZRealism
 
         public void OnChange()
         {
+            Speedometers.OnSettingsChanged();
         }
     }
 }

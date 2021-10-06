@@ -67,11 +67,35 @@ namespace DvMod.ZRealism
             }
         }
 
+        private static void SetupSpeedometerTicking(Indicator speedometer)
+        {
+            if (Main.settings.speedometerVolume == 0)
+            {
+                Component.Destroy(speedometer.GetComponent<AudioSource>());
+            }
+
+            var source = speedometer.GetComponent<AudioSource>();
+            if (source == null)
+            {
+                source = speedometer.gameObject.AddComponent<AudioSource>();
+                source.loop = true;
+                source.clip = FileAudio.Load("clock-ticking-5.ogg");
+                source.spatialBlend = 1f;
+                source.rolloffMode = AudioRolloffMode.Linear;
+                source.minDistance = 0.1f;
+                source.maxDistance = 3f;
+                source.Play();
+            }
+
+            source.volume = Main.settings.speedometerVolume;
+        }
+
         [HarmonyPatch(typeof(IndicatorsDiesel), nameof(IndicatorsDiesel.Start))]
         public static class IndicatorsDieselStartPatch
         {
             public static void Postfix(IndicatorsDiesel __instance)
             {
+                SetupSpeedometerTicking(__instance.speed);
                 __instance.StartCoroutine(UpdateSpeedometerCoro(__instance.speed, __instance.ctrl));
             }
         }
@@ -81,6 +105,7 @@ namespace DvMod.ZRealism
         {
             public static void Postfix(IndicatorsShunter __instance)
             {
+                SetupSpeedometerTicking(__instance.speed);
                 __instance.StartCoroutine(UpdateSpeedometerCoro(__instance.speed, __instance.ctrl));
             }
         }
@@ -90,8 +115,19 @@ namespace DvMod.ZRealism
         {
             public static void Postfix(IndicatorsSteam __instance)
             {
+                SetupSpeedometerTicking(__instance.speed);
                 __instance.StartCoroutine(UpdateSpeedometerCoro(__instance.speed, __instance.ctrl));
             }
+        }
+
+        public static void OnSettingsChanged()
+        {
+            foreach (var indicators in Component.FindObjectsOfType<IndicatorsDiesel>())
+                SetupSpeedometerTicking(indicators.speed);
+            foreach (var indicators in Component.FindObjectsOfType<IndicatorsShunter>())
+                SetupSpeedometerTicking(indicators.speed);
+            foreach (var indicators in Component.FindObjectsOfType<IndicatorsSteam>())
+                SetupSpeedometerTicking(indicators.speed);
         }
     }
 }
