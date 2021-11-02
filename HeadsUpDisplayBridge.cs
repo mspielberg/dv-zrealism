@@ -51,18 +51,6 @@ namespace DvMod.ZRealism
             }
 
             RegisterPull(
-                "Front coupler",
-                car => car.frontCoupler.GetComponent<CouplerBreaker>()?.jointStress,
-                v => $"{v / Main.settings.couplerStrength / 1e6f:P0}",
-                hidden: true);
-
-            RegisterPull(
-                "Rear coupler",
-                car => car.rearCoupler.GetComponent<CouplerBreaker>()?.jointStress,
-                v => $"{v / Main.settings.couplerStrength / 1e6f:P0}",
-                hidden: true);
-
-            RegisterPull(
                 "Fuel consumption",
                 car =>
                 {
