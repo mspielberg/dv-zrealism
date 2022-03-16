@@ -36,7 +36,6 @@ namespace DvMod.ZRealism
             {
                 yield return AccessTools.Method(typeof(IndicatorsDiesel), nameof(IndicatorsDiesel.Update));
                 yield return AccessTools.Method(typeof(IndicatorsShunter), nameof(IndicatorsShunter.Update));
-                yield return AccessTools.Method(typeof(IndicatorsSteam), nameof(IndicatorsSteam.Update));
             }
 
             public static IEnumerable<CodeInstruction> Transpiler(IEnumerable<CodeInstruction> instructions)
@@ -62,6 +61,8 @@ namespace DvMod.ZRealism
                 {
                     lastUpdate = Time.time;
                     needleTarget = GetSpeedometerSpeed(controller);
+                    if (speedometer.GetComponent<AudioSource>() is AudioSource source && source != null)
+                        source.mute = needleTarget < 0.5f;
                 }
                 speedometer.value = needlePosition = Mathf.SmoothDamp(needlePosition, needleTarget, ref velo, Main.settings.speedometerSmoothing);
             }
@@ -110,23 +111,11 @@ namespace DvMod.ZRealism
             }
         }
 
-        [HarmonyPatch(typeof(IndicatorsSteam), nameof(IndicatorsSteam.Start))]
-        public static class IndicatorsSteamStartPatch
-        {
-            public static void Postfix(IndicatorsSteam __instance)
-            {
-                SetupSpeedometerTicking(__instance.speed);
-                __instance.StartCoroutine(UpdateSpeedometerCoro(__instance.speed, __instance.ctrl));
-            }
-        }
-
         public static void OnSettingsChanged()
         {
             foreach (var indicators in Component.FindObjectsOfType<IndicatorsDiesel>())
                 SetupSpeedometerTicking(indicators.speed);
             foreach (var indicators in Component.FindObjectsOfType<IndicatorsShunter>())
-                SetupSpeedometerTicking(indicators.speed);
-            foreach (var indicators in Component.FindObjectsOfType<IndicatorsSteam>())
                 SetupSpeedometerTicking(indicators.speed);
         }
     }
