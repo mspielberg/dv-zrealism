@@ -53,13 +53,14 @@ namespace DvMod.ZRealism
             RegisterPull(
                 "Fuel consumption",
                 car =>
+                car.carType switch
                 {
-                    if (car.carType == TrainCarType.LocoDiesel)
-                        return DieselPower.DieselFuelUsage(DieselPower.RawPowerInWatts(car.GetComponentInChildren<DieselLocoSimulation>()));
-                    else if (CarTypes.IsShunterLocomotive(car.carType))
-                        return ShunterFuelPatch.DieselFuelUsage(ShunterPower.RawPowerInWatts(car.GetComponentInChildren<ShunterLocoSimulation>()));
-                    else
-                        return null;
+                    TrainCarType.LocoDiesel =>
+                        DieselPower.DieselFuelUsage(DieselPower.RawPowerInWatts(car.GetComponentInChildren<DieselLocoSimulation>())),
+                    TrainCarType.LocoShunter =>
+                        ShunterFuelPatch.DieselFuelUsage(ShunterPower.RawPowerInWatts(car.GetComponentInChildren<ShunterLocoSimulation>())),
+                    _ =>
+                         null,
                 },
                 v => $"{v * 3600f:F0} L/h"
             );
