@@ -275,6 +275,16 @@ namespace DvMod.ZRealism
                 }
             }
 
+            [HarmonyPatch(typeof(DieselLocoSimulation), nameof(DieselLocoSimulation.LoadComponentsState))]
+            public static class LoadComponentsStatePatch
+            {
+                public static void Postfix(DieselLocoSimulation __instance)
+                {
+                    if (__instance.sand.value == DieselLocoSimulation.SAND_CAPACITY_L)
+                        __instance.sand.value = __instance.sand.max;
+                }
+            }
+
             [HarmonyPatch(typeof(DieselLocoSimulation), nameof(DieselLocoSimulation.SimulateSand))]
             public static class SimulateSandPatch
             {
