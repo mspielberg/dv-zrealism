@@ -21,7 +21,7 @@ namespace DvMod.ZRealism
             try
             {
                 var hudMod = UnityModManager.FindMod("HeadsUpDisplay");
-                if (hudMod?.Loaded != true)
+                if (hudMod?.Active != true)
                     return;
                 instance = new HeadsUpDisplayBridge(hudMod);
             }
