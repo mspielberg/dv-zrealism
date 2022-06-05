@@ -1,22 +1,24 @@
 using HarmonyLib;
-using System.Collections.Generic;
-using System.Reflection.Emit;
 using UnityEngine;
 
 namespace DvMod.ZRealism
 {
     public static class GradeTraction
     {
-        [HarmonyPatch(typeof(CarTypes), nameof(CarTypes.GetCarPrefab))]
-        public static class GetCarPrefabPatch
+        private static void ModifyFrictionCurve(TrainCar car)
         {
-            public static void Postfix(ref GameObject __result)
-            {
-                if (__result?.GetComponent<DrivingForce>() is DrivingForce df && df != null)
-                {
-                    df.wheelslipToFrictionModifierCurve = AnimationCurve.EaseInOut(0, 0.25f, 1, 0);
-                }
-            }
+            if (car.GetComponent<DrivingForce>() is DrivingForce df && df != null)
+                df.wheelslipToFrictionModifierCurve = AnimationCurve.EaseInOut(0, 0.25f, 1, 0);
+        }
+
+        public static void AddCallbacks()
+        {
+            CarSpawner.CarSpawned += ModifyFrictionCurve;
+        }
+
+        public static void RemoveCallbacks()
+        {
+            CarSpawner.CarSpawned -= ModifyFrictionCurve;
         }
 
         [HarmonyPatch(typeof(DrivingForce), nameof(DrivingForce.UpdateWheelslip))]
@@ -46,49 +48,5 @@ namespace DvMod.ZRealism
                 return false;
             }
         }
-
-/*
-        public static class Foo
-        {
-            public static IEnumerable<CodeInstruction> Transpiler(IEnumerable<CodeInstruction> instructions)
-            {
-                var iter = instructions.GetEnumerator();
-                Main.DebugLog(() => "Searching for Stloc.2");
-                iter.MoveNext();
-                while (iter.Current.opcode != OpCodes.Stloc_2)
-                {
-                    Main.DebugLog(() => iter.Current.ToString());
-                    yield return iter.Current;
-                    iter.MoveNext();
-                }
-                Main.DebugLog(() => "Found Stloc.2");
-                var labels = iter.Current.labels;
-                // iter now at: TOP = 1 - slopCoeficientMultiplier * <head of stack> / 90
-                // skip to: num = TOP
-                Main.DebugLog(() => "Searching for Stloc.3");
-                while (iter.Current.opcode != OpCodes.Stloc_3)
-                    iter.MoveNext();
-                Main.DebugLog(() => "Found Stloc.3");
-
-                // TOP = Cos(TOP * Deg2Rad)
-                yield return new CodeInstruction(
-                    OpCodes.Ldc_R4,
-                    UnityEngine.Mathf.Deg2Rad)
-                    {
-                        labels = labels,
-                    };
-                yield return new CodeInstruction(OpCodes.Mul);
-                yield return new CodeInstruction(
-                    OpCodes.Call,
-                    AccessTools.Method(typeof(UnityEngine.Mathf), nameof(UnityEngine.Mathf.Cos)));
-
-                // emit: num = TOP
-                yield return iter.Current;
-
-                while (iter.MoveNext())
-                    yield return iter.Current;
-            }
-        }
-        */
     }
 }
