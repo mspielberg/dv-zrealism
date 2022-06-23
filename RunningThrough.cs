@@ -2,6 +2,7 @@ using DV.JObjectExtstensions;
 using DV.ServicePenalty;
 using HarmonyLib;
 using Newtonsoft.Json.Linq;
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using UnityEngine;
@@ -11,6 +12,9 @@ namespace DvMod.ZRealism
     public static class RunningThrough
     {
         private const DebtType BrokenJunction = (DebtType)100;
+        private const string BrokenJunctionMessage = "{0} has broken a misaligned junction!" +
+            " To fix the junction pay the J-{1} fee at the Career Manager." +
+            " See the ZRealism settings to adjust this feature.";
 
         public class BrokenJunctionDebt : DisplayableDebt
         {
@@ -62,8 +66,15 @@ namespace DvMod.ZRealism
             if (Main.settings.playJunctionDamageSound)
             {
                 var clip = car.GetComponentInChildren<CarCollisionSounds>().impactClips.Last();
-                clip.Play(junction.transform.position, 1f, Random.Range(0.95f, 1.05f), 0f, 1f, 500f, default(AudioSourceCurves), AudioManager.e ? AudioManager.e.collisionGroup : null);
+                clip.Play(junction.transform.position, 1f, UnityEngine.Random.Range(0.95f, 1.05f), 0f, 1f, 500f, default(AudioSourceCurves), AudioManager.e ? AudioManager.e.collisionGroup : null);
                 DV.CommsRadioController.PlayAudioFromCar(clip, car);
+            }
+            if (Main.settings.showBrokenJunctionMessage)
+            {
+                MessageBox.ShowMessage(
+                    String.Format(BrokenJunctionMessage, car.ID, JunctionKey(junction)),
+                    pauseGame: true,
+                    delay: 3);
             }
             DebtController.RegisterDebt(new BrokenJunctionDebt(JunctionKey(junction)));
         }
@@ -83,7 +94,7 @@ namespace DvMod.ZRealism
                 if (branchIndex < 0)
                 {
                     // facing-point movement
-                    if (isBroken && Random.value < Main.settings.damagedJunctionFlipPercent / 100f)
+                    if (isBroken && UnityEngine.Random.value < Main.settings.damagedJunctionFlipPercent / 100f)
                         junction.Switch(Junction.SwitchMode.NO_SOUND);
                     return false;
                 }
@@ -95,7 +106,7 @@ namespace DvMod.ZRealism
                 }
 
                 // trailing-point movement on incorrect branch
-                if (!isBroken && Random.value < Main.settings.runningThroughDamagePercent / 100f)
+                if (!isBroken && UnityEngine.Random.value < Main.settings.runningThroughDamagePercent / 100f)
                     DamageJunction(__instance.Car, junction);
                 if (Main.settings.forceSwitchOnRunningThrough)
                     junction.Switch(Junction.SwitchMode.FORCED);
