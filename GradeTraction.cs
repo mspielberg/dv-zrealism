@@ -44,14 +44,23 @@ namespace DvMod.ZRealism
                     {
                         return Mathf.Lerp(
                             Main.settings.dryFrictionCoefficient,
-                            Main.settings.wetFrictionCoeff,
+                            Main.settings.wetFrictionCoefficient,
                             (float)rainStrengthBlendGetter.Invoke(null, new object[0]));
                     }
                     catch (Exception)
                     {
-                        return Main.settings.dryFrictionCoefficientk;
+                        return Main.settings.dryFrictionCoefficient;
                     }
                 }
+            }
+
+            private static float PositionalRandomFactor(Bogie bogie)
+            {
+                var position = (Vector3)bogie.point1.position;
+                var modifier = Mathf.PerlinNoise(
+                    position.x * Main.settings.positionalTractionFrequency,
+                    position.z * Main.settings.positionalTractionFrequency) * 2f - 1f;
+                return 1.0f + modifier * Main.settings.positionalTractionAmplitude;
             }
 
             public static bool Prefix(DrivingForce __instance, float inputForce, Bogie bogie, float maxTractionForcePossible)
@@ -63,9 +72,10 @@ namespace DvMod.ZRealism
                     return false;
                 }
                 TrainCar car = bogie.Car;
-                float wheelslipModifier =  Mathf.Clamp01(__instance.wheelslipToFrictionModifierCurve.Evaluate(Mathf.Clamp01(__instance.wheelslip)));
+                float positionModifier = PositionalRandomFactor(bogie);
+                float wheelslipModifier = Mathf.Clamp01(__instance.wheelslipToFrictionModifierCurve.Evaluate(Mathf.Clamp01(__instance.wheelslip)));
                 float weatherModifier = WeatherRelatedTractionModifier;
-                __instance.frictionCoeficient = Mathf.Lerp(
+                __instance.frictionCoeficient = positionModifier * Mathf.Lerp(
                     wheelslipModifier * weatherModifier,
                     Main.settings.sandFrictionCoefficient,
                     __instance.sandCoef);
@@ -74,7 +84,7 @@ namespace DvMod.ZRealism
                 // assume total bogie mass is 1/2 of adhesive weight
                 __instance.factorOfAdhesion = bogie.rb.mass * num2 * __instance.frictionCoeficient * 2;
                 __instance.tractionForceWheelslipLimit = __instance.factorOfAdhesion * 9.8f;
-                Main.DebugLog(car, () => $"slipMod={wheelslipModifier:F2},weatherMod={weatherModifier:F2},sand={__instance.sandCoef:F2},frictionCoeff={__instance.frictionCoeficient:F2},angle={num:F2},normalRatio={num2:F2},wheelslipLimit={__instance.tractionForceWheelslipLimit}");
+                Main.DebugLog(car, () => $"positionMod={positionModifier},slipMod={wheelslipModifier:F2},weatherMod={weatherModifier:F2},sand={__instance.sandCoef:F2},frictionCoeff={__instance.frictionCoeficient:F2},angle={num:F2},normalRatio={num2:F2},wheelslipLimit={__instance.tractionForceWheelslipLimit}");
                 float num3 = Mathf.Abs(inputForce) - bogie.brakingForce;
                 __instance.wheelslip = Mathf.Clamp01((num3 - __instance.tractionForceWheelslipLimit) / Mathf.Abs(maxTractionForcePossible - __instance.tractionForceWheelslipLimit));
                 bogie.wheelslip = __instance.wheelslip;

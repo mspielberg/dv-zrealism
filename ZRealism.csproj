@@ -20,8 +20,10 @@
     <Reference Include="0Harmony"/>
     <Reference Include="Assembly-CSharp"/>
     <Reference Include="Assembly-CSharp-firstpass"/>
+    <Reference Include="DV.PointSet"/>
     <Reference Include="DV.Utils"/>
     <Reference Include="NAudio"/>
+    <Reference Include="net.smkd.vector3d"/>
     <Reference Include="Newtonsoft.Json"/>
     <Reference Include="Stateless"/>
     <Reference Include="UnityEngine.AnimationModule"/>

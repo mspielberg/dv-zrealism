@@ -17,6 +17,8 @@ namespace DvMod.ZRealism
         [Draw("Dry traction")] public float dryFrictionCoefficient = 0.24f;
         [Draw("Wet traction (requires ProceduralSkyMod)")] public float wetFrictionCoefficient = 0.18f;
         [Draw("Sand traction (overrides dry/wet)")] public float sandFrictionCoefficient = 0.56f;
+        [Draw("Traction variation frequency")] public float positionalTractionFrequency = 1.0f;
+        [Draw("Traction variation amplitude")] public float positionalTractionAmplitude = 0.5f;
 
         [Draw("Diesel cooling")] public float dieselCoolingMultiplier = 1.0f;
         [Draw("Shunter cooling")] public float shunterTemperatureMultiplier = 0.12f;
