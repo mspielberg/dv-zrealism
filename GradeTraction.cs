@@ -29,9 +29,6 @@ namespace DvMod.ZRealism
         [HarmonyPatch(typeof(DrivingForce), nameof(DrivingForce.UpdateWheelslip))]
         public static class UpdateWheelslipPatch
         {
-            private const float DryFrictionCoeff = 0.3f;
-            private const float WetFrictionCoeff = 0.05f;
-            private const float SandFrictionCoeff = 0.2f;
             private static readonly bool proceduralSkyLoaded = UnityModManager.FindMod("ProceduralSkyMod")?.Active ?? false;
             private static MethodInfo? rainStrengthBlendGetter;
 
@@ -40,19 +37,19 @@ namespace DvMod.ZRealism
                 get
                 {
                     if (!proceduralSkyLoaded)
-                        return DryFrictionCoeff;
+                        return Main.settings.dryFrictionCoefficient;
                     if (rainStrengthBlendGetter == null)
                         rainStrengthBlendGetter = AccessTools.PropertyGetter(AccessTools.TypeByName("ProceduralSkyMod.WeatherSource"), "RainStrengthBlend");
                     try
                     {
                         return Mathf.Lerp(
-                            DryFrictionCoeff,
-                            WetFrictionCoeff,
+                            Main.settings.dryFrictionCoefficient,
+                            Main.settings.wetFrictionCoeff,
                             (float)rainStrengthBlendGetter.Invoke(null, new object[0]));
                     }
                     catch (Exception)
                     {
-                        return DryFrictionCoeff;
+                        return Main.settings.dryFrictionCoefficientk;
                     }
                 }
             }
@@ -70,7 +67,7 @@ namespace DvMod.ZRealism
                 float weatherModifier = WeatherRelatedTractionModifier;
                 __instance.frictionCoeficient = Mathf.Lerp(
                     wheelslipModifier * weatherModifier,
-                    SandFrictionCoeff,
+                    Main.settings.sandFrictionCoefficient,
                     __instance.sandCoef);
                 float num = car.transform.localEulerAngles.x;
                 float num2 = Mathf.Cos(Mathf.Deg2Rad * num);

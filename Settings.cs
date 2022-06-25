@@ -10,6 +10,14 @@ namespace DvMod.ZRealism
         [Draw("Play sound when junction damaged")] public bool playJunctionDamageSound = true;
         [Draw("Chance for damaged junction to flip")] public float damagedJunctionFlipPercent = 10f;
 
+        // https://www.hindawi.com/journals/sv/2021/6904346/
+        // dry + leaves
+        // water + leaves
+        // sand + leaves
+        [Draw("Dry traction")] public float dryFrictionCoefficient = 0.24f;
+        [Draw("Wet traction (requires ProceduralSkyMod)")] public float wetFrictionCoefficient = 0.18f;
+        [Draw("Sand traction (overrides dry/wet)")] public float sandFrictionCoefficient = 0.56f;
+
         [Draw("Diesel cooling")] public float dieselCoolingMultiplier = 1.0f;
         [Draw("Shunter cooling")] public float shunterTemperatureMultiplier = 0.12f;
 
