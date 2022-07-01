@@ -184,20 +184,20 @@ namespace DvMod.ZRealism
             {
                 switch (state.runningFans)
                 {
-                case 0:
-                    if (engineTemp > RadiatorFan1OnThreshold)
-                        state.runningFans = 1;
-                    break;
-                case 1:
-                    if (engineTemp < RadiatorFan1OffThreshold)
-                        state.runningFans = 0;
-                    else if (engineTemp > RadiatorFan2OnThreshold)
-                        state.runningFans = 2;
-                    break;
-                case 2:
-                    if (engineTemp < RadiatorFan2OffThreshold)
-                        state.runningFans = 1;
-                    break;
+                    case 0:
+                        if (engineTemp > RadiatorFan1OnThreshold)
+                            state.runningFans = 1;
+                        break;
+                    case 1:
+                        if (engineTemp < RadiatorFan1OffThreshold)
+                            state.runningFans = 0;
+                        else if (engineTemp > RadiatorFan2OnThreshold)
+                            state.runningFans = 2;
+                        break;
+                    case 2:
+                        if (engineTemp < RadiatorFan2OffThreshold)
+                            state.runningFans = 1;
+                        break;
                 }
             }
 

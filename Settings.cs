@@ -19,6 +19,7 @@ namespace DvMod.ZRealism
         [Draw("Sand traction (overrides dry/wet)")] public float sandFrictionCoefficient = 0.56f;
         [Draw("Traction variation frequency")] public float positionalTractionFrequency = 1.0f;
         [Draw("Traction variation amplitude")] public float positionalTractionAmplitude = 0.5f;
+        [Draw("Traction variation seed")] public int positionalTractionSeed = 0;
 
         [Draw("Diesel cooling")] public float dieselCoolingMultiplier = 1.0f;
         [Draw("Shunter cooling")] public float shunterTemperatureMultiplier = 0.12f;
@@ -29,7 +30,7 @@ namespace DvMod.ZRealism
         [Draw("Shunter fuel consumption multiplier")] public float shunterFuelConsumptionMultiplier = 10f;
         [Draw("Shunter oil consumption multiplier")] public float shunterOilConsumptionMultiplier = 50f;
 
-        [Draw("Speedometer volume", Min=0f, Max=1f)] public float speedometerVolume = 0.2f;
+        [Draw("Speedometer volume", Min = 0f, Max = 1f)] public float speedometerVolume = 0.2f;
         [Draw("Speedometer update period")] public float speedometerUpdatePeriod = 0.9f;
         [Draw("Speedometer smoothing")] public float speedometerSmoothing = 0.05f;
 

@@ -39,7 +39,10 @@ namespace DvMod.ZRealism
                     if (!proceduralSkyLoaded)
                         return Main.settings.dryFrictionCoefficient;
                     if (rainStrengthBlendGetter == null)
-                        rainStrengthBlendGetter = AccessTools.PropertyGetter(AccessTools.TypeByName("ProceduralSkyMod.WeatherSource"), "RainStrengthBlend");
+                    {
+                        var weatherSourceType = AccessTools.TypeByName("ProceduralSkyMod.WeatherSource");
+                        rainStrengthBlendGetter = AccessTools.PropertyGetter(weatherSourceType, "RainStrengthBlend");
+                    }
                     try
                     {
                         return Mathf.Lerp(
@@ -54,13 +57,19 @@ namespace DvMod.ZRealism
                 }
             }
 
+            private const float PositionalFrequencyScale = 1000f;
+
             private static float PositionalRandomFactor(Bogie bogie)
             {
-                var position = (Vector3)bogie.point1.position;
-                var modifier = Mathf.PerlinNoise(
-                    position.x * Main.settings.positionalTractionFrequency,
-                    position.z * Main.settings.positionalTractionFrequency) * 2f - 1f;
-                return 1.0f + modifier * Main.settings.positionalTractionAmplitude;
+                static float CoordAdjust(float coord)
+                {
+                    return (coord
+                        * (Main.settings.positionalTractionFrequency / PositionalFrequencyScale))
+                        + Main.settings.positionalTractionSeed;
+                }
+                Vector3 position = (Vector3)bogie.point1.position;
+                float modifier = (Mathf.PerlinNoise(CoordAdjust(position.x), CoordAdjust(position.z)) * 2f) - 1f;
+                return 1.0f + (modifier * Main.settings.positionalTractionAmplitude);
             }
 
             public static bool Prefix(DrivingForce __instance, float inputForce, Bogie bogie, float maxTractionForcePossible)
@@ -73,7 +82,8 @@ namespace DvMod.ZRealism
                 }
                 TrainCar car = bogie.Car;
                 float positionModifier = PositionalRandomFactor(bogie);
-                float wheelslipModifier = Mathf.Clamp01(__instance.wheelslipToFrictionModifierCurve.Evaluate(Mathf.Clamp01(__instance.wheelslip)));
+                float wheelslipModifier = Mathf.Clamp01(
+                    __instance.wheelslipToFrictionModifierCurve.Evaluate(Mathf.Clamp01(__instance.wheelslip)));
                 float weatherModifier = WeatherRelatedTractionModifier;
                 __instance.frictionCoeficient = positionModifier * Mathf.Lerp(
                     wheelslipModifier * weatherModifier,
