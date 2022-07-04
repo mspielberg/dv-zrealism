@@ -61,12 +61,8 @@ namespace DvMod.ZRealism
 
             private static float PositionalRandomFactor(Bogie bogie)
             {
-                static float CoordAdjust(float coord)
-                {
-                    return (coord
-                        * (Main.settings.positionalTractionFrequency / PositionalFrequencyScale))
-                        + Main.settings.positionalTractionSeed;
-                }
+                static float CoordAdjust(float coord) =>
+                    coord * Main.settings.positionalTractionFrequency / PositionalFrequencyScale;
                 Vector3 position = (Vector3)bogie.point1.position;
                 float modifier = (Mathf.PerlinNoise(CoordAdjust(position.x), CoordAdjust(position.z)) * 2f) - 1f;
                 return 1.0f + (modifier * Main.settings.positionalTractionAmplitude);
