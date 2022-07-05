@@ -2,7 +2,7 @@
   "Id": "ZRealism",
   "DisplayName": "Zeibach's Realism Overhaul",
   "Author": "Zeibach",
-  "Version": "0.4.3",
+  "Version": "0.5.0",
   "LoadAfter": ["HeadsUpDisplay"],
   "AssemblyName": "ZRealism.dll",
   "EntryMethod": "DvMod.ZRealism.Main.Load",
