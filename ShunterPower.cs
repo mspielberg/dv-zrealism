@@ -97,7 +97,8 @@ namespace DvMod.ZRealism
         [HarmonyPatch(typeof(ShunterLocoSimulation), nameof(ShunterLocoSimulation.SimulateEngineTemp))]
         public static class ShunterTemperaturePatch
         {
-            public const float ThermostatTemp = 80f;
+            public const float ThermostatCloseTemp = 70f;
+            public const float ThermostatOpenTemp = 80f;
             public const float AmbientTemperature = 20f;
             public const float CoolingFanSpeedEquivalent = 50f;
             public const float NoRadiatorSpeedEquivalent = 5f;
@@ -108,11 +109,13 @@ namespace DvMod.ZRealism
                     __instance.engineTemp.AddNextValue(heating * delta);
 
                 var fanRunning = ExtraState.Instance(__instance).UpdateFan();
-                var thermostatOpen = __instance.engineTemp.value >= ThermostatTemp;
-                var airflow =
-                    !thermostatOpen ? NoRadiatorSpeedEquivalent :
-                    fanRunning && __instance.speed.value < CoolingFanSpeedEquivalent ? CoolingFanSpeedEquivalent :
-                    __instance.speed.value;
+                var thermostatOpening = Mathf.InverseLerp(ThermostatCloseTemp, ThermostatOpenTemp, __instance.engineTemp.value);
+                var airflow = Mathf.Lerp(
+                    NoRadiatorSpeedEquivalent,
+                    fanRunning && __instance.speed.value < CoolingFanSpeedEquivalent
+                        ? CoolingFanSpeedEquivalent
+                        : __instance.speed.value,
+                    thermostatOpening);
                 var temperatureDelta = __instance.engineTemp.value - AmbientTemperature;
                 var cooling = airflow / CoolingFanSpeedEquivalent * temperatureDelta * Main.settings.shunterTemperatureMultiplier;
                 __instance.engineTemp.AddNextValue(-cooling * delta);
